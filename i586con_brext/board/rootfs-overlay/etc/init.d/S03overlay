@@ -1,0 +1,42 @@
+#!/bin/sh
+
+start() {
+	grep /dev/root /proc/mounts | grep -q squashfs && (
+		echo 'Setting up tmpfs overlays (/etc,/root,/usr)'
+		mkdir -p /tmp/.o
+		cd /tmp/.o
+
+		mkdir -p etc-ro etc-wk etc-ov
+		mount --bind /etc etc-ro
+		mount -t overlay overlay -o lowerdir=etc-ro,upperdir=etc-ov,workdir=etc-wk /etc
+
+
+		mkdir -p root-ro root-wk root-ov
+		mount --bind /root root-ro
+		mount -t overlay overlay -o lowerdir=root-ro,upperdir=root-ov,workdir=root-wk /root
+
+		mkdir -p usr-ro usr-wk usr-ov
+		mount --bind /usr usr-ro
+		mount -t overlay overlay -o lowerdir=usr-ro,upperdir=usr-ov,workdir=usr-wk /usr
+	)
+	return 0
+}
+
+stop() {
+	return 0
+}
+
+restart() {
+	return 0
+}
+
+case "$1" in
+	start|stop|restart)
+		"$1";;
+	reload)
+		# Restart, since there is no true "reload" feature.
+		restart;;
+	*)
+		echo "Usage: $0 {start|stop|restart|reload}"
+		exit 1
+esac
