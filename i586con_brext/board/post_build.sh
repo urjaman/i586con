@@ -3,6 +3,7 @@ echo "XXXXXXXXXXXXXX RUNNING POST BUILD SCRIPT XXXXXXXXXXXXXXXXXX"
 cd "$1/etc/init.d"
 [ -e S50sshd ] && mv S50sshd N50sshd
 [ -e S20urandom ] && mv S20urandom N20urandom
+sed -i '/udevadm settle/d' S10udev
 cd "$1/etc"
 #grep -q devtmpfs inittab || sed -i '17 a ::sysinit:/bin/mount -t devtmpfs devtmpfs /dev' inittab
 grep -q tty2 inittab || sed -i '31 a tty2::respawn:/sbin/getty -L tty2 0 linux' inittab

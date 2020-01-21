@@ -1,23 +1,21 @@
 #!/bin/sh
 
+do_overlay_mount() {
+	mkdir -p $1-ro $1-wk $1-ov
+	mount --bind /$1 $1-ro
+	mount -t overlay overlay -o lowerdir=$1-ro,upperdir=$1-ov,workdir=$1-wk /$1
+}
+
 start() {
 	grep /dev/root /proc/mounts | grep -q squashfs && (
-		echo 'Setting up tmpfs overlays (/etc,/root,/usr)'
+		echo 'Setting up tmpfs overlays (/etc,/root,/usr,/home)'
 		mkdir -p /tmp/.o
 		cd /tmp/.o
 
-		mkdir -p etc-ro etc-wk etc-ov
-		mount --bind /etc etc-ro
-		mount -t overlay overlay -o lowerdir=etc-ro,upperdir=etc-ov,workdir=etc-wk /etc
-
-
-		mkdir -p root-ro root-wk root-ov
-		mount --bind /root root-ro
-		mount -t overlay overlay -o lowerdir=root-ro,upperdir=root-ov,workdir=root-wk /root
-
-		mkdir -p usr-ro usr-wk usr-ov
-		mount --bind /usr usr-ro
-		mount -t overlay overlay -o lowerdir=usr-ro,upperdir=usr-ov,workdir=usr-wk /usr
+		do_overlay_mount etc
+		do_overlay_mount root
+		do_overlay_mount usr
+		do_overlay_mount home
 	)
 	return 0
 }
