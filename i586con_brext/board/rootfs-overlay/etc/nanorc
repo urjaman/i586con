@@ -1,0 +1,26 @@
+## Remember the used search/replace strings for the next session.
+set historylog
+
+## Switch on multiple file buffers (inserting a file will put it into
+## a separate buffer).
+set multibuffer
+
+## Remember the cursor position in each file for the next editing session.
+set positionlog
+
+## Jumpy scrolling for slow framebuffers :P
+set jumpyscrolling
+
+## Paint the interface elements of nano.  These are examples;
+## by default there are no colors, except for errorcolor.
+set titlecolor brightwhite,blue
+set statuscolor brightwhite,green
+set errorcolor brightwhite,red
+set selectedcolor brightwhite,magenta
+set numbercolor brightcyan
+set keycolor cyan
+set functioncolor green
+set stripecolor brightwhite,red
+
+## Unbind Justify from main Ctrl-J because it's too easy to accidentally do
+unbind ^J main

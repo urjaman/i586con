@@ -1,20 +1,16 @@
 #!/bin/sh
 
 start() {
-	echo "Creating a screen session for net tasks (screen -r bgscreen to use)"
-	screen -dmS bgscreen
+	echo "Login as root or user (no password)."
+	echo "System (& kernel) logs are in VT7 (Alt-F7) or /var/log/messages"
 	return 0
 }
 
 stop() {
-	screen -XS bgscreen quit
 	return 0
 }
 
 restart() {
-	stop
-	sleep 1
-	start
 	return 0
 }
 

@@ -1,6 +1,10 @@
 #!/bin/sh
-BRDIR="$(realpath buildroot-*)"
-BUILDDIR="$(realpath *_build)"
+if [ "$#" -ne 2 ]; then
+	echo "Usage: $0 <buildroot-dir> <build-dir>"
+	exit 1
+fi
+BRDIR="$(realpath $1)"
+BUILDDIR="$(realpath $2)"
 EXTDIR="$(realpath *_brext)"
 CONFIGNAME=i586con_defconfig
 echo Buildroot dir: $BRDIR
@@ -10,8 +14,6 @@ echo defconfig to be used: $CONFIGNAME
 echo Press enter to continue
 read dummy
 
-echo Cleaning build dir
-rm -rf $BUILDDIR
 mkdir -p $BUILDDIR
 
 echo Configuring...
