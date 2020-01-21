@@ -1,0 +1,43 @@
+This is the recipes for a little CONsole-only linux for i586's (or better)
+(thus the i586con name) based on buildroot, for use when you just
+need to get to a commandline with some tools pretty quickly.
+
+A little list of notable tools i've picked:
+- the usual cli partitioning tools
+- ntfs-3g and ntfsprogs
+- ddrescue
+- rsync
+- cdrkit (wodim, genisoimage)
+- flashrom
+
+How to build:
+./fextract.sh to download and extract buildroot
+./init_bdir.sh to initialize a build directory
+(optionally make make menuconfig or make linux-menuconfig
+ if you need/want to adjust the kernel or package selection etc)
+make to build it (hopefully)
+
+In case you just want the result right now, i have one here:
+https://urja.dev/i586con-200121.iso
+
+Tech notes:
+----------
+The boot method is kernel + an actual initrd
+(the RAMDISK style, with a squashfs on it), so 
+that it can fit the entire linux into 64M of ram,
+and the boot media can be removed after the bootloader
+phase.
+
+Overlayfs and tmpfs are combined to make
+the interesting parts of the filesystem writable
+(only in ram so everything is lost on reboot or shutdown).
+
+It will try to bring up up to one internet
+connection (LAN only) using DHCP, and then
+brings up a ssh daemon (no logins are possible
+until somebody sets a password for some account),
+and it will do this in a very ghetto way 
+(eudev runs a script that runs another script
+in a screen that was started into the background
+earlier during the boot).
+
