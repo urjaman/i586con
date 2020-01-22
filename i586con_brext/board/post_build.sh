@@ -16,4 +16,6 @@ grep -q tty7 inittab || sed -i '36 a tty7::respawn:/usr/bin/tail -f /var/log/mes
 cd "$1"
 rm -rf usr/share/mc/help/mc.hlp.*
 rm -rf usr/share/zoneinfo/right
+# these python modules are not needed for our use case (of mostly a calculator), really...
+rm -rf usr/lib/python*/{ensurepip,distutils,turtle*}
 exit 0
