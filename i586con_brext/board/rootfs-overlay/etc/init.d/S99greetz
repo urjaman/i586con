@@ -1,6 +1,7 @@
 #!/bin/sh
 
 start() {
+	echo
 	echo "Login as root or user (no password)."
 	echo "System (& kernel) logs are in VT7 (Alt-F7) or /var/log/messages"
 	return 0
