@@ -5,6 +5,8 @@ cd "$1/etc/init.d"
 [ -e S50sshd ] && mv S50sshd N50sshd
 # do not auto-do the urandom stuff since we have no randomness on a CD
 [ -e S20urandom ] && mv S20urandom N20urandom
+# do not autostart telnetd, FFS (it exists to allow manual careful use in controlled environments, not autorunning lol)
+[ -e S50telnet ] && mv S50telnet N50telnet
 # no sysctls are used, thus get rid of it
 rm -f S02sysctl
 # do not wait to settle udev before giving a prompt, the
@@ -26,7 +28,7 @@ rm -rf usr/share/mc/help/mc.hlp.*
 # we only need the posix zoneinfo (if even that but i like the idea...)
 rm -rf usr/share/zoneinfo/right
 # these python modules are not needed for our use case (of mostly a calculator), really...
-rm -rf usr/lib/python*/{ensurepip,distutils,unittest,turtle*}
+rm -rf usr/lib/python*/{ensurepip,distutils,unittest,email,turtle*}
 # the stdcpp gdb helper thing is very not needed
 rm -f usr/lib/libstdc++.so.*-gdb.py
 # we only need smartctl, not the rest of smartmontools
