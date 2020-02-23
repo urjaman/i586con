@@ -1,0 +1,27 @@
+#!/bin/sh
+
+start() {
+	# the fuse node is needed for autoloading of the fuse module to work
+	cd /dev
+	mknod -m 0600 fuse c 10 229
+	return 0
+}
+
+stop() {
+	return 0
+}
+
+restart() {
+	return 0
+}
+
+case "$1" in
+	start|stop|restart)
+		"$1";;
+	reload)
+		# Restart, since there is no true "reload" feature.
+		restart;;
+	*)
+		echo "Usage: $0 {start|stop|restart|reload}"
+		exit 1
+esac
