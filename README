@@ -11,14 +11,16 @@ A little list of notable tools i've picked:
 - flashrom
 
 How to build:
-./fextract.sh to download and extract buildroot
-./init_bdir.sh to initialize a build directory
-(optionally make make menuconfig or make linux-menuconfig
+use ./fextract.sh to download and extract buildroot
+use ./init_bdir.sh to initialize a build directory
+(optionally make menuconfig or make linux-menuconfig
  if you need/want to adjust the kernel or package selection etc)
 make to build it (hopefully)
+(Do read the scripts before using them.)
+
 
 In case you just want the result right now, i have one here:
-https://urja.dev/i586con-200121.iso
+https://urja.dev/i586con-200628.iso
 
 Tech notes:
 ----------
@@ -41,3 +43,17 @@ and it will do this in a very ghetto way
 in a screen that was started into the background
 earlier during the boot).
 
+NB: There's an experimental HD install feature
+of the "best of both worlds" type: compressed
+RAM-based linux from HD with saveable
+state -- the negatives are:
+- you need to list the files to be saved (/etc/saved_files)
+- you need to run hd_save.py to save the files
+ - this script is quite wack
+- all the saved files take RAM (in both the ramdisk and tmpfs)
+
+But the positives are that the system is quite customizable,
+requires no disk access past the bootloader and still
+boots without waiting for any devices/udev/whatever
+and thus allows repartitioning the disk it booted from
+if desired.
