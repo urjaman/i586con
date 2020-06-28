@@ -15,9 +15,10 @@ echo Press enter to continue
 read dummy
 
 mkdir -p $BUILDDIR
-
+set -x
 echo Configuring...
 cd $BUILDDIR
+make BR2_EXTERNAL=$EXTDIR O=$BUILDDIR -C $BRDIR help
 make BR2_EXTERNAL=$EXTDIR O=$BUILDDIR -C $BRDIR $CONFIGNAME
 echo Dropping you to a shell in the build dir
 bash

@@ -20,6 +20,8 @@ grep -q tty4 inittab || sed -i '33 a tty4::respawn:/sbin/getty -L tty4 0 linux' 
 grep -q tty5 inittab || sed -i '34 a tty5::respawn:/sbin/getty -L tty5 0 linux' inittab
 grep -q tty6 inittab || sed -i '35 a tty6::respawn:/sbin/getty -L tty6 0 linux' inittab
 grep -q tty7 inittab || sed -i '36 a tty7::respawn:/usr/bin/tail -f /var/log/messages' inittab
+# Add a line to do the super-early FS stuff
+grep -q fs_early_init inittab || sed -i '19 a ::sysinit:/usr/bin/fs_early_init.sh' inittab
 # Add an empty line to the issue text if it's only one line right now :)
 [ "$(cat issue | wc -l)" -lt 2 ] && echo >> issue
 cd "$1"
@@ -42,4 +44,16 @@ cd "$1/usr/share"
 # the hwdata non-gzipped one compresses better in squashfs so remove the gz and add
 # a link for pciutils to understand where the hwdata one is.
 [ -f pci.ids.gz ] && [ -f hwdata/pci.ids ] && (rm pci.ids.gz; ln -s hwdata/pci.ids pci.ids)
+cd "$1"
+# get rid of the less useful (for our only old x86 use) grub tools
+rm -f usr/bin/grub-{render-label,mount,mknetdir,syslinux2cfg,fstest,menulst2cfg,glue-efi} || true
+rm -f usr/sbin/grub-{macbless,sparc64-setup} || true
+# these are symbol & debug stuff (why does buildroot end up with them installed?)
+rm -f usr/lib/grub/i386-pc/*.module || true
+rm -f usr/lib/grub/i386-pc/*.image || true
+rm -f usr/lib/grub/i386-pc/{kernel.exec,gdb_grub,gmodule.pl} || true
+# this grub config is useless and confusing, get rid of it
+rm -fr boot/grub
+# no info pages here
+rm -fr share/info
 exit 0
