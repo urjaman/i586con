@@ -18,7 +18,7 @@ cp /mnt/boot/bzImage /boot/bzImage
 # we no longer need the i586con media, try to release it
 umount /mnt || true
 # splurt the squashfs image from RAM to HDD (this is a nice part of having a legit ramdisk instead of initramfs...)
-dd if=/dev/ram0 of=/boot/initrd.sqf_base bs=4k
+dd if=/dev/ram0 of=/boot/initrd.sqf bs=4k
 mkdir -p /boot/grub
 grub-install "$3"
 VGA_PARAM="$(tr ' ' '\n' < /proc/cmdline | grep vga=)"
