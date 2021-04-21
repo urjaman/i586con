@@ -22,8 +22,8 @@ make to build it (hopefully)
 In case you just want the result right now, i have one here:
 https://urja.dev/i586con-200628.iso
 
-Tech notes:
-----------
+## Tech notes
+-------------
 The boot method is kernel + an actual initrd
 (the RAMDISK style, with a squashfs on it), so 
 that it can fit the entire linux into 64M of ram,
@@ -57,3 +57,19 @@ requires no disk access past the bootloader and still
 boots without waiting for any devices/udev/whatever
 and thus allows repartitioning the disk it booted from
 if desired.
+
+## ext/
+-------
+
+Is a little fun adventure of getting a C compiler on an i586con system
+-- buildroot doesn't want to know of this, they purposefully refuse to
+support shipping a gcc for the target -- but also i dont really need gcc
+(also have you heard of how much RAM it uses these days?)
+
+So, TCC (Tiny C Compiler) will do just fine, and is actually fast on
+ancient hardware too :)
+
+Anyways, ext/ has scripts to create a "bolt-on" squashfs that can be
+mounted at /opt on an i586con system and provides (for now)
+basic TCC incl. the system headers and crt*.o files from buildroot
+and make.
