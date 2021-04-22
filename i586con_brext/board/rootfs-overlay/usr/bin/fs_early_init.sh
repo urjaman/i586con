@@ -20,7 +20,8 @@ grep /dev/root /proc/mounts | grep -q squashfs && (
 grep -q i586con.offset= /proc/cmdline && (
 	echo 'Unpacking appended saved state...'
 	OFFSET="$(tr ' ' '\n' < /proc/cmdline | grep i586con.offset= | cut -f 2 -d '=')"
+	SIZE="$(tr ' ' '\n' < /proc/cmdline | grep i586con.size= | cut -f 2 -d '=')"
 	cd /
-	dd if=/dev/ram0 bs=1k skip=$OFFSET status=none | gunzip | cpio -idumH newc
+	dd if=/dev/ram0 bs=1k skip=$OFFSET count=$SIZE status=none | gunzip | cpio -idumH newc
 	rm -f /usr/bin/hdinstall.sh
 )

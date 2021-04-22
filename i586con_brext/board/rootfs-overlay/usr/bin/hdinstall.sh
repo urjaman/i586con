@@ -22,7 +22,6 @@ dd if=/dev/ram0 of=/boot/initrd.sqf bs=4k
 mkdir -p /boot/grub
 grub-install "$3"
 VGA_PARAM="$(tr ' ' '\n' < /proc/cmdline | grep vga=)"
-SQF_SZ="$(tr ' ' '\n' < /proc/cmdline | grep brd.rd_size= | cut -f 2 -d '=')"
 cat > /boot/grub/grub.cfg <<EOF
 set timeout=5
 set default=0
@@ -32,7 +31,7 @@ set menu_color_normal=black/blue
 set color_normal=cyan/black
 
 menuentry "i586con hdinstall" {
-	linux16 /bzImage brd.rd_size=32768 root=/dev/ram0 i586con.offset=$SQF_SZ $VGA_PARAM
+	linux16 /bzImage brd.rd_size=32768 root=/dev/ram0 i586con.offset=0 i586con.size=0 $VGA_PARAM
 	initrd16 /initrd.sqf
 }
 EOF

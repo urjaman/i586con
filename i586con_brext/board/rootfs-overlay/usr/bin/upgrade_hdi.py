@@ -39,26 +39,6 @@ bzI = 'bzImage'
 sqf = 'initrd.sqf'
 bt = '/boot/'
 
-rd_size = 'brd.rd_size='
-
-def cmdline_int_val(line, par):
-	if par in line:
-		off = line.find(par)
-		ls = line[off+len(par):].split(' ',1)
-		return int(ls[0])
-	return None
-
-
-upgrade_sz = None
-with open(iso9660_mp + '/isolinux/isolinux.cfg', 'r') as f:
-	for l in f:
-		if rd_size in l:
-			upgrade_sz = cmdline_int_val(l, rd_size)
-			if upgrade_sz is not None:
-				break
-if upgrade_sz is None:
-	sys.exit('parsing isolinux.cfg for squashfs size failed')
-
 os.chdir(iso9660_mp + '/boot')
 if os.path.exists(bzI) is False:
 	sys.exit('Upgrade kernel (bzImage) not found')
@@ -75,7 +55,7 @@ if sub(['cp', bzI, bt + bzI]) is False:
 if sub(['cp', sqf, bt + sqf]) is False:
 	sys.exit('Copying squashfs failed')
 
-if sub(['/usr/bin/hd_save.py', 'upgrade=' + str(upgrade_sz) ]) is False:
+if sub(['/usr/bin/hd_save.py', 'upgrade=1' ]) is False:
 	sys.exit('Initial save of saved files to new squashfs failed')
 
 os.unlink(bt + bzI + bk)
