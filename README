@@ -9,6 +9,9 @@ A little list of notable tools i've picked:
 - rsync
 - cdrkit (wodim, genisoimage)
 - flashrom
+less tools, more fun:
+- gpm mouse support (nano, links)
+- links with framebuffer graphics support
 
 How to build:
 use ./fextract.sh to download and extract buildroot
@@ -18,9 +21,8 @@ use ./init_bdir.sh to initialize a build directory
 make to build it (hopefully)
 (Do read the scripts before using them.)
 
-
 In case you just want the result right now, i have one here:
-https://urja.dev/i586con-200628.iso
+https://urja.dev/i586con-210423.iso
 
 ## Tech notes
 -------------
@@ -57,6 +59,16 @@ requires no disk access past the bootloader and still
 boots without waiting for any devices/udev/whatever
 and thus allows repartitioning the disk it booted from
 if desired.
+
+## Size note
+------------
+Regarding the "runs in 64M of RAM", my hard
+limit is that the squashfs size <= 30 MiB,
+and kernel is well, sane (lets say <= 3.5 MiB packed).
+
+The ISO-image can in principle contain any
+number of extra things if desired, CDs have
+all the space for us :P
 
 ## ext/
 -------
