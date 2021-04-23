@@ -1,0 +1,30 @@
+#!/bin/sh
+
+start() {
+	echo "Starting gpm"
+	gpm -m /dev/input/mice -t imps2
+	return 0
+}
+
+stop() {
+	gpm -k
+	return 0
+}
+
+restart() {
+	stop
+	sleep 1
+	start
+	return 0
+}
+
+case "$1" in
+	start|stop|restart)
+		"$1";;
+	reload)
+		# Restart, since there is no true "reload" feature.
+		restart;;
+	*)
+		echo "Usage: $0 {start|stop|restart|reload}"
+		exit 1
+esac

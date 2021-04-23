@@ -6,64 +6,64 @@ import sys
 
 boot_part = "/dev/disk/by-label/I586CON_BOOT"
 
+
 def sub(*args, **kwargs):
-        return subprocess.run(*args, **kwargs).returncode == 0
+    return subprocess.run(*args, **kwargs).returncode == 0
+
 
 if len(sys.argv) != 2:
-	sys.exit('Usage: ' + sys.argv[0] + ' <new-i586con.iso>')
+    sys.exit("Usage: " + sys.argv[0] + " <new-i586con.iso>")
 
-if os.path.exists(boot_part) is False:
-        sys.exit("Boot partition not found")
+if not os.path.exists(boot_part):
+    sys.exit("Boot partition not found")
 
-print('Note: this upgrade is very simple replacement of the base squashfs and kernel.')
-print('If there are updates to files you overwrite with /etc/saved_files, new kernel')
-print('commandline parameters or a better grub version shipped in the new i586con,')
-print('you will need to apply those yourself.')
+print("Note: this upgrade is very simple replacement of the base squashfs and kernel.")
+print("If there are updates to files you overwrite with /etc/saved_files, new kernel")
+print("commandline parameters or a better grub version shipped in the new i586con,")
+print("you will need to apply those yourself.")
 
-iso9660_mp = '/tmp/upgrade_hdi_isomp'
+iso9660_mp = "/tmp/upgrade_hdi_isomp"
 
 os.makedirs(iso9660_mp, exist_ok=True)
 
-if sub(['mount', '-o', 'loop,ro', '-t', 'iso9660', sys.argv[1], iso9660_mp]) is False:
-	sys.exit("Mounting '" + sys.argv[1] + "' failed")
+if not sub(["mount", "-o", "loop,ro", "-t", "iso9660", sys.argv[1], iso9660_mp]):
+    sys.exit("Mounting '" + sys.argv[1] + "' failed")
 
-if sub(['mountpoint','-q','/boot']):
-        sub(['umount','/boot'])
+if sub(["mountpoint", "-q", "/boot"]):
+    sub(["umount", "/boot"])
 
-if sub(['mount','-t','ext4',boot_part,'/boot']) is False:
-        sys.exit("Mounting boot partition failed")
+if not sub(["mount", "-t", "ext4", boot_part, "/boot"]):
+    sys.exit("Mounting boot partition failed")
 
+bk = ".bak"
+bzI = "bzImage"
+sqf = "initrd.sqf"
+bt = "/boot/"
 
-bk = '.bak'
-bzI = 'bzImage'
-sqf = 'initrd.sqf'
-bt = '/boot/'
+os.chdir(iso9660_mp + "/boot")
+if not os.path.exists(bzI):
+    sys.exit("Upgrade kernel (bzImage) not found")
 
-os.chdir(iso9660_mp + '/boot')
-if os.path.exists(bzI) is False:
-	sys.exit('Upgrade kernel (bzImage) not found')
-
-if os.path.exists(sqf) is False:
-	sys.exit('Upgrade squashfs not found')
+if not os.path.exists(sqf):
+    sys.exit("Upgrade squashfs not found")
 
 os.replace(bt + bzI, bt + bzI + bk)
 os.replace(bt + sqf, bt + sqf + bk)
 
-if sub(['cp', bzI, bt + bzI]) is False:
-	sys.exit('Copying bzImage failed')
+if not sub(["cp", bzI, bt + bzI]):
+    sys.exit("Copying bzImage failed")
 
-if sub(['cp', sqf, bt + sqf]) is False:
-	sys.exit('Copying squashfs failed')
+if not sub(["cp", sqf, bt + sqf]):
+    sys.exit("Copying squashfs failed")
 
-if sub(['/usr/bin/hd_save.py', 'upgrade=1' ]) is False:
-	sys.exit('Initial save of saved files to new squashfs failed')
+if not sub(["/usr/bin/hd_save.py", "upgrade=1"]):
+    sys.exit("Initial save of saved files to new squashfs failed")
 
 os.unlink(bt + bzI + bk)
 os.unlink(bt + sqf + bk)
 
 # then finally umount things
-os.chdir('/')
-sub(['umount','/boot'])
-sub(['umount', iso9660_mp])
-print('Upgrade complete')
-
+os.chdir("/")
+sub(["umount", "/boot"])
+sub(["umount", iso9660_mp])
+print("Upgrade complete")

@@ -11,8 +11,7 @@ set positionlog
 ## Jumpy scrolling for slow framebuffers :P
 set jumpyscrolling
 
-## Paint the interface elements of nano.  These are examples;
-## by default there are no colors, except for errorcolor.
+## Paint the interface elements of nano.
 set titlecolor brightwhite,blue
 set statuscolor brightwhite,green
 set errorcolor brightwhite,red
@@ -24,3 +23,11 @@ set stripecolor brightwhite,red
 
 ## Unbind Justify from main Ctrl-J because it's too easy to accidentally do
 unbind ^J main
+
+## We have GPM :) (and sshd...)
+set mouse
+
+## Syntax highlight by default (NB. This can be slow, disable if it bothers you.)
+include "/usr/share/nano/*.nanorc"
+## The system embraces python, let's make nano edit it sanely too
+extendsyntax python tabgives "    "

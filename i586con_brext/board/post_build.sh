@@ -24,6 +24,8 @@ grep -q tty7 inittab || sed -i '36 a tty7::respawn:/usr/bin/tail -f /var/log/mes
 grep -q fs_early_init inittab || sed -i '19 a ::sysinit:/usr/bin/fs_early_init.sh' inittab
 # Add an empty line to the issue text if it's only one line right now :)
 [ "$(cat issue | wc -l)" -lt 2 ] && echo >> issue
+# Don't give me a headache when tab-completing in the dark
+sed -i 's/set bell-style visible/set bell-style none/' inputrc
 cd "$1"
 # non-english mc help files? ehh...
 rm -rf usr/share/mc/help/mc.hlp.*
@@ -56,4 +58,7 @@ rm -f usr/lib/grub/i386-pc/{kernel.exec,gdb_grub,gmodule.pl} || true
 rm -fr boot/grub
 # no info pages here
 rm -fr share/info
+cd "$1/usr/bin"
+# give us ldd
+[ -e ldd ] || ln -s ../lib/ld-musl-* ldd
 exit 0
