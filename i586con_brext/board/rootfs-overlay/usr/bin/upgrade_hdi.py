@@ -1,11 +1,9 @@
 #!/usr/bin/python3
 
-import subprocess
 import os
 import sys
-
-boot_part = "/dev/disk/by-label/I586CON_BOOT"
-
+import subprocess
+import hd_save
 
 def sub(*args, **kwargs):
     return subprocess.run(*args, **kwargs).returncode == 0
@@ -14,8 +12,7 @@ def sub(*args, **kwargs):
 if len(sys.argv) != 2:
     sys.exit("Usage: " + sys.argv[0] + " <new-i586con.iso>")
 
-if not os.path.exists(boot_part):
-    sys.exit("Boot partition not found")
+hd_save.mount_boot()
 
 print("Note: this upgrade is very simple replacement of the base squashfs and kernel.")
 print("If there are updates to files you overwrite with /etc/saved_files, new kernel")
@@ -28,12 +25,6 @@ os.makedirs(iso9660_mp, exist_ok=True)
 
 if not sub(["mount", "-o", "loop,ro", "-t", "iso9660", sys.argv[1], iso9660_mp]):
     sys.exit("Mounting '" + sys.argv[1] + "' failed")
-
-if sub(["mountpoint", "-q", "/boot"]):
-    sub(["umount", "/boot"])
-
-if not sub(["mount", "-t", "ext4", boot_part, "/boot"]):
-    sys.exit("Mounting boot partition failed")
 
 bk = ".bak"
 bzI = "bzImage"
@@ -56,8 +47,7 @@ if not sub(["cp", bzI, bt + bzI]):
 if not sub(["cp", sqf, bt + sqf]):
     sys.exit("Copying squashfs failed")
 
-if not sub(["/usr/bin/hd_save.py", "upgrade=1"]):
-    sys.exit("Initial save of saved files to new squashfs failed")
+hd_save.hd_save()
 
 os.unlink(bt + bzI + bk)
 os.unlink(bt + sqf + bk)
