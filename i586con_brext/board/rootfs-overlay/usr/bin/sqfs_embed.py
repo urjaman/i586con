@@ -12,12 +12,14 @@ import struct
 # Luckily (or maybe by design?) this seems to be possible without recompressing
 # anything (exception being XATTR, but we dont use XATTR so it's ok).
 
+
 def roundk(x, k):
     return (x + k - 1) & ~(k - 1)
 
 
 def roundkd(x, k):
     return roundk(x, k) // k
+
 
 class SBF:
     MAGIC = 0
@@ -140,10 +142,10 @@ class SQSB:
 
 class SQFS_Embed:
     # start (Q), len (L), align-offset (H), header checksum (H), magic (H)
-    eh_fmt = '<QL3H'
+    eh_fmt = "<QL3H"
     eh_magic = 0x8845
     eh_len = struct.calcsize(eh_fmt)
-    cs_fmt = '<' + str(eh_len // 2) + 'H'
+    cs_fmt = "<" + str(eh_len // 2) + "H"
     size_tol = 4096
 
     def checksum(s, ehb):
@@ -171,9 +173,13 @@ class SQFS_Embed:
 
         cs = s.checksum(ehb)
         if eh[-2] != cs:
-            sys.stderr.write("Embed Header checksum failure: "
-                             + hex(eh[-2]) + " (expected) vs "
-                             + hex(cs) +" (computed)\n")
+            sys.stderr.write(
+                "Embed Header checksum failure: "
+                + hex(eh[-2])
+                + " (expected) vs "
+                + hex(cs)
+                + " (computed)\n"
+            )
             return
 
         if (eh[0] + eh[1] + eh[2]) > s.eh_off or eh[0] < s.fs.sb_len:
@@ -238,8 +244,10 @@ class SQFS_Embed:
         free = s.eh_off - s.fs.f.tell()
         if free:
             s.fs.f.write(bytes(free))
-        cs = s.checksum(struct.pack(s.eh_fmt, s.start, s.len, s.align_off, 0, s.eh_magic))
-        s.fs.f.write(struct.pack(s.eh_fmt, s.start, s.len, s.align_off,  cs, s.eh_magic))
+        cs = s.checksum(
+            struct.pack(s.eh_fmt, s.start, s.len, s.align_off, 0, s.eh_magic)
+        )
+        s.fs.f.write(struct.pack(s.eh_fmt, s.start, s.len, s.align_off, cs, s.eh_magic))
         s.padend()
 
     def read(s, fo):
@@ -256,26 +264,26 @@ if __name__ == "__main__":
     things = []
     align = 1024
     for a in sys.argv[1:]:
-        if a == '-d':
+        if a == "-d":
             dashd = True
             continue
-        elif a[0] != '-':
+        elif a[0] != "-":
             things.append(a)
             if len(things) == 3:
                 if a.isascii() and a.isdigit():
                     align = int(a)
-                    if align & (align-1) or align == 0:
-                        sys.exit('Align not a Power of 2')
+                    if align & (align - 1) or align == 0:
+                        sys.exit("Align not a Power of 2")
                 else:
-                    sys.exit('Invalid alignment param ' + a)
+                    sys.exit("Invalid alignment param " + a)
             if len(things) > 3:
-                sys.exit('Too many parameters')
+                sys.exit("Too many parameters")
         else:
-            print('usage: ' + sys.argv[0] + ' [-d] <file.sqfs> [embedded.bin] [align]')
+            print("usage: " + sys.argv[0] + " [-d] <file.sqfs> [embedded.bin] [align]")
             sys.exit()
 
     if not things:
-        sys.exit('SquashFS file is a required parameter')
+        sys.exit("SquashFS file is a required parameter")
 
     embedfile = things[1] if len(things) >= 2 else None
 

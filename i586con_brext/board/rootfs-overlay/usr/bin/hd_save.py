@@ -5,14 +5,17 @@ import sys
 import subprocess
 import sqfs_embed
 
+
 def sub(*args, **kwargs):
     return subprocess.run(*args, **kwargs).returncode == 0
+
 
 def splice_par(l, par, val):
     cut = l.find(par)
     pre = l[:cut]
     (dummy, post) = l[cut:].split(" ", 1)
     return pre + par + val + " " + post
+
 
 def mount_boot():
     boot_part = "/dev/disk/by-label/I586CON_BOOT"
@@ -76,7 +79,7 @@ def hd_save():
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
-        sys.exit(sys.argv[0] + ' takes no parameters')
+        sys.exit(sys.argv[0] + " takes no parameters")
 
     mount_boot()
 
