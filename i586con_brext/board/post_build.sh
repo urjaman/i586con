@@ -54,6 +54,8 @@ rm -f usr/sbin/grub-{macbless,sparc64-setup} || true
 rm -f usr/lib/grub/i386-pc/*.module || true
 rm -f usr/lib/grub/i386-pc/*.image || true
 rm -f usr/lib/grub/i386-pc/{kernel.exec,gdb_grub,gmodule.pl} || true
+# and this is ... i dont even know, but we dont need it)
+rm -rf share || true
 # this grub config is useless and confusing, get rid of it
 rm -fr boot/grub
 # no info pages here
