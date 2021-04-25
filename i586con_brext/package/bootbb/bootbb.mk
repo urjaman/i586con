@@ -53,7 +53,7 @@ BOOTBB_KCONFIG_EDITORS = menuconfig xconfig gconfig
 BOOTBB_KCONFIG_OPTS = $(BOOTBB_MAKE_OPTS)
 
 define BOOTBB_PERMISSIONS
-	/.busybox                     f 4755 0  0 - - - - -
+	/busybox                     f 4755 0  0 - - - - -
 endef
 
 ifeq ($(BR2_USE_MMU),y)
@@ -94,7 +94,7 @@ define BOOTBB_BUILD_CMDS
 endef
 
 define BOOTBB_INSTALL_TARGET_CMDS
-	$(INSTALL) -D -m 0755 $(@D)/busybox $(TARGET_DIR)/.busybox
+	$(INSTALL) -D -m 0755 $(@D)/busybox $(TARGET_DIR)/busybox
 endef
 
 # Checks to give errors that the user can understand

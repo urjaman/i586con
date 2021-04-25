@@ -1,0 +1,11 @@
+#!/busybox sh
+mount -t devtmpfs devtmpfs /dev
+mount -t tmpfs tmpfs /.o
+cd /.o
+mkdir -p ro usr-ov usr-wk etc-ov etc-wk
+mount -t squashfs -o loop,ro /ro.sqfs ro
+mount -t overlay overlay -o lowerdir=ro/usr,upperdir=usr-ov,workdir=usr-wk /usr
+mount -t overlay overlay -o lowerdir=ro/etc,upperdir=etc-ov,workdir=etc-wk /etc
+exec /sbin/init
+echo fallback
+exec /busybox sh

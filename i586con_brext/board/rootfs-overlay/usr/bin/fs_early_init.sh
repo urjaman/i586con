@@ -1,5 +1,5 @@
 #!/bin/sh
-
+exit 0
 do_overlay_mount() {
 	mkdir -p $1-ro $1-wk $1-ov
 	mount --bind /$1 $1-ro
