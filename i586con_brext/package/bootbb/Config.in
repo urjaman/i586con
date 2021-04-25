@@ -1,0 +1,22 @@
+config BR2_PACKAGE_BOOTBB
+	bool "Boot BusyBox"
+	default n
+	help
+	  A second copy of busybox to install as /.busybox, for special
+	  use during the boot process, or as a rescue shell.
+
+	  The Swiss Army Knife of embedded Linux. It slices, it dices,
+	  it makes Julian Fries.
+
+	  http://busybox.net/
+
+
+if BR2_PACKAGE_BOOTBB
+
+config BR2_PACKAGE_BOOTBB_CONFIG
+	string "Boot BusyBox configuration file to use?"
+	default "package/bootbb/bootbb.config"
+	help
+	  Path to the configuration file for boot/2nd busybox
+
+endif
