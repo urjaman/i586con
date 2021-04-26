@@ -1,0 +1,10 @@
+#!/busybox sh
+DEV="/dev/$3"
+if [ -b "$DEV" ]; then
+	if /mounter /mnt/cd 1 0 "$DEV"; then
+		if [ -f /waiting-mounter-pid ]; then
+			kill $(cat /waiting-mounter-pid)
+			rm -f /waiting-mounter-pid
+		fi
+	fi
+fi

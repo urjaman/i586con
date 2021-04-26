@@ -31,7 +31,7 @@ cd "$1"
 rm -rf usr/share/mc/help/mc.hlp.*
 # we only need the posix zoneinfo (if even that but i like the idea...)
 rm -rf usr/share/zoneinfo/right
-# these python modules are not needed for our use case (of mostly a calculator), really...
+# these python modules are not needed for our use case
 rm -rf usr/lib/python*/{ensurepip,distutils,unittest,email,turtle*}
 # the stdcpp gdb helper thing is very not needed
 rm -f usr/lib/libstdc++.so.*-gdb.py
@@ -54,7 +54,7 @@ rm -f usr/sbin/grub-{macbless,sparc64-setup} || true
 rm -f usr/lib/grub/i386-pc/*.module || true
 rm -f usr/lib/grub/i386-pc/*.image || true
 rm -f usr/lib/grub/i386-pc/{kernel.exec,gdb_grub,gmodule.pl} || true
-# and this is ... i dont even know, but we dont need it)
+# and this is grub prefix messup that ... i dont even know, but we dont need it
 rm -rf share || true
 # this grub config is useless and confusing, get rid of it
 rm -fr boot/grub

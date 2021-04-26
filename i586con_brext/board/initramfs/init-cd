@@ -1,0 +1,8 @@
+#!/busybox sh
+. /startup
+. /tmpfsmnt "-o size=50%"
+. /mountroot /mnt/cd /mnt/cd/img
+echo "Unpacking save.tgz..."
+tar xf cd/img/save.tgz
+. /overlay ../cd/img/ro.sqf
+. /switch

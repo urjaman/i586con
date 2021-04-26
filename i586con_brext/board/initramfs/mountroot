@@ -1,0 +1,10 @@
+#!source-me/sh
+inotifyd /notifycb /dev:n &
+NOTIFYPID=$!
+/mounter $1 5 2.5s
+kill $NOTIFYPID
+if [ ! -e $2 ]; then
+	echo "Couldn't find media. Mount it on $1 if you can..."
+	sh
+fi
+echo "Media found and mounted."

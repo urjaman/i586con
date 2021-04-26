@@ -1,0 +1,4 @@
+#!source-me/sh
+mount -t tmpfs $1 tmpfs /mnt
+mkdir -p /mnt/cd
+cd /mnt

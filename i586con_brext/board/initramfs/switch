@@ -1,0 +1,7 @@
+#!source-me/sh
+cd /
+umount sys
+umount proc
+mount --move /dev /mnt/dev
+echo "Switching to main /sbin/init"
+exec /busybox switch_root -c dev/console /mnt /sbin/init "$@"

@@ -1,12 +1,7 @@
 #!/busybox sh
-mount -t devtmpfs devtmpfs /dev
-mount -t proc proc proc
-mount -t sysfs sys sys
-mount -t tmpfs -o size=75% tmpfs /mnt
-mkdir -p /mnt/cd
-cd /mnt
+# mounter MOUNTPT TRIES SLEEP [DEVICE]
+# returns 0 if mounted, 1 if not
 
-#set -x
 ROOT=$(tr ' ' '\n' < /proc/cmdline | grep 'root=' | cut -d = -f 2-)
 if echo $ROOT | grep -q "="; then
 	FIND_TYPE="$(echo $ROOT | cut -d = -f 1)="
@@ -17,11 +12,25 @@ else
 	FIND_TYPE="NOTYPE"
 	FIND_VAL="NOVALUE"
 fi
-
+if [ $2 -gt 1 ]; then
+	echo $$ > /waiting-mounter-pid
+fi
+cd /mnt
 TRIES=0
 FOUND=0
-while [ $TRIES -lt 40 ]; do
-	blkid > /blkid.txt
+TMPF=/blkid-$$.txt
+while [ $TRIES -lt $2 ]; do
+	if [ $TRIES -gt 0 ]; then
+		if [ $TRIES -eq 1 ]; then
+			echo "Waiting for media..."
+		fi
+		sleep $3
+	fi
+	if [ -z "$4" ]; then
+		blkid > $TMPF
+	else
+		blkid "$4" > $TMPF
+	fi
 	while read dev; do
 		DEVICE=$(echo $dev | cut -d : -f 1)
 		if [ "$DEVICE" = "$FIND_DEV" ]; then
@@ -40,31 +49,29 @@ while [ $TRIES -lt 40 ]; do
 				fi
 			fi
 		done
-	done < /blkid.txt
+		if [ $FOUND -gt 0 ]; then
+			break
+		fi
+	done < $TMPF
 	TRIES=$((TRIES + 1))
 	if [ $FOUND -gt 0 ]; then
 		break
 	fi
-	sleep 0.25s
 done
+if [ $2 -gt 1 ]; then
+	rm -f /waiting-mounter-pid
+fi
 if [ $FOUND -gt 0 ]; then
-	mount -o ro $DEVICE cd
+	# Several mounters can be running at once -- avoid double-mounting
+	(
+		flock 9
+		if mountpoint -q "$1"; then
+			exit 0
+		fi
+		mount -o ro "$DEVICE" "$1"
+	) 9>/mounting
 fi
-if [ ! -e cd/boot ]; then
-	echo "Couldn't find media. Mount it on /mnt/cd if you can..."
-	sh
+if mountpoint -q "$1"; then
+	exit 0
 fi
-
-tar xf cd/img/save.tgz
-cp cd/img/ro.sqf ro.sqfs
-umount cd
-cd .o
-mkdir -p ro usr-ov usr-wk etc-ov etc-wk
-mount -t squashfs -o loop,ro ../ro.sqfs ro
-mount -t overlay overlay -o lowerdir=ro/usr,upperdir=usr-ov,workdir=usr-wk ../usr
-mount -t overlay overlay -o lowerdir=ro/etc,upperdir=etc-ov,workdir=etc-wk ../etc
-cd /
-umount sys
-umount proc
-mount --move /dev /mnt/dev
-exec /busybox switch_root -c dev/console /mnt /sbin/init "$@"
+exit 1

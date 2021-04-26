@@ -1,0 +1,11 @@
+#!/busybox sh
+. /startup
+. /tmpfsmnt "-o size=75%"
+. /mountroot /mnt/cd /mnt/cd/img
+echo "Unpacking save.tgz..."
+tar xf cd/img/save.tgz
+echo "Copying read-only image to RAM..."
+cp cd/img/ro.sqf ro.sqfs
+. /overlay "../ro.sqfs"
+umount /mnt/cd
+. /switch
