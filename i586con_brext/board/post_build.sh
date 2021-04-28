@@ -60,6 +60,8 @@ rm -rf share || true
 rm -fr boot/grub
 # no info pages here
 rm -fr share/info
+# gnu tar is also prefix-confused and installs rmt (which we dont need) under /libexec
+rm -fr libexec
 cd "$1/usr/bin"
 # give us ldd
 [ -e ldd ] || ln -s ../lib/ld-musl-* ldd

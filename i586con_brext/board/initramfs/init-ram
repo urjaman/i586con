@@ -5,7 +5,10 @@
 echo "Unpacking save.tgz..."
 tar xf cd/img/save.tgz
 echo "Copying read-only image to RAM..."
-cp cd/img/ro.sqf ro.sqfs
-. /overlay "../ro.sqfs"
+cp cd/img/rootfs.img ro.cpio
+truncate -s $(cat cd/img/ro-size) ro.cpio
+. /overlay "../ro.cpio"
+cd /mnt
+[ -x preinit.sh ] && ./preinit.sh
 umount /mnt/cd
 . /switch

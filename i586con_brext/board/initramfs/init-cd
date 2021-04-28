@@ -4,5 +4,7 @@
 . /mountroot /mnt/cd /mnt/cd/img
 echo "Unpacking save.tgz..."
 tar xf cd/img/save.tgz
-. /overlay ../cd/img/ro.sqf
+. /overlay ../cd/img/rootfs.img
+cd /mnt
+[ -x preinit.sh ] && ./preinit.sh
 . /switch

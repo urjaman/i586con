@@ -2,6 +2,7 @@
 
 import os
 import sys
+import stat
 import subprocess
 import hd_save
 
@@ -9,23 +10,32 @@ import hd_save
 def sub(*args, **kwargs):
     return subprocess.run(*args, **kwargs).returncode == 0
 
+def mount_opts(path):
+    opts = 'ro'
+    x = os.stat(path)
+    if stat.S_ISBLK(x.st_mode):
+        return opts
+    return opts + ',loop'
 
 if len(sys.argv) != 2:
     sys.exit("Usage: " + sys.argv[0] + " <new-i586con.iso>")
 
 hd_save.mount_boot()
 
-print("Note: this upgrade is very simple replacement of the base squashfs and kernel.")
-print("If there are updates to files you overwrite with /etc/saved_files, new kernel")
-print("commandline parameters or a better grub version shipped in the new i586con,")
-print("you will need to apply those yourself.")
+print("""
+Note: this upgrade is very simple replacement of the base squashfs and kernel.
+If there are updates to files in save.tgz, new kernel commandline parameters
+or a better grub version shipped in the new i586con, you will need to apply
+those yourself.
+""")
 
+newimg = sys.argv[1]
 iso9660_mp = "/tmp/upgrade_hdi_isomp"
-
 os.makedirs(iso9660_mp, exist_ok=True)
 
-if not sub(["mount", "-o", "loop,ro", "-t", "iso9660", sys.argv[1], iso9660_mp]):
-    sys.exit("Mounting '" + sys.argv[1] + "' failed")
+
+if not sub(["mount", "-o", mount_opts(newimg), "-t", "iso9660", newimg, iso9660_mp]):
+    sys.exit("Mounting '" + newimg + "' failed")
 
 bk = ".bak"
 bzI = "bzImage"
