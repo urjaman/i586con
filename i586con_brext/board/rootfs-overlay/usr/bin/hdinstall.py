@@ -33,7 +33,7 @@ def stat_blockdev(path):
         sys.exit(f'{path} is not a block device node.')
     return x
 
-if len(sys.argv) != 4:
+if len(sys.argv) != 3:
     sys.exit(f"usage: {sys.argv[0]} <hdd_part_dev> <grub_install_dev>")
 
 pdev = sys.argv[1]
@@ -74,6 +74,7 @@ time.sleep(3)
 
 umountcd = False
 if not sub(['mountpoint','-q','/cd']):
+    os.makedirs('/cd', exist_ok=True)
     schk(['mount', '-t', 'iso9660', '/dev/disk/by-label/I586CON', '/cd' ],
            emsg='Mounting i586con media failed')
     umountcd = True
@@ -91,7 +92,7 @@ for f in ( 'ram', 'cd', 'hd' ):
     schk(['cp', cdbt + f + '.img', bt + 'rd/'], emsg="Copying initramfs images failed")
 
 for f in ( 'rootfs.img', 'ro-size' ):
-    schk(['cp', '/cd/img' + f, '/boot/img/'], emsg="Copying read-only fs image failed")
+    schk(['cp', '/cd/img/' + f, '/boot/img/'], emsg="Copying read-only fs image failed")
 
 hds.hd_save(allfmt=True)
 
@@ -101,8 +102,8 @@ schk(['grub-install', grubdev ], emsg='grub-install failed')
 def menuentry(name, lines):
     el = ['menuentry "', name , '" {\n' ]
     for l in lines:
-        el.append(['\t', l, '\n'])
-    el.append(['}\n'])
+        el += ['\t', l, '\n']
+    el += ['}\n']
     return ''.join(el)
 
 with open("/proc/cmdline") as f:
@@ -112,7 +113,7 @@ with open("/proc/cmdline") as f:
 vga_param = [ x for x in cmdline.split() if x.startswith("vga=") ]
 
 k_start = 'linux16 /bzImage'
-kern1 = ' '.join([k_start, 'root=' + hds.boot_label ] + vga_param)
+kern1 = ' '.join([k_start, 'root=LABEL=' + hds.boot_label ] + vga_param)
 kern2 = ' '.join([k_start, 'rootfstype=ramfs' ] + vga_param)
 inrd = 'initrd16 /rd/'
 
@@ -121,7 +122,7 @@ set timeout=5
 set default=0
 
 set menu_color_highlight=black/light-gray
-set menu_color_normal=black/blue
+set menu_color_normal=light-gray/blue
 set color_normal=cyan/black
 """[1:]
 
@@ -132,7 +133,7 @@ cfg = [
     menuentry('i586con/BIOS2RAM', [kern2, 'initrd16 /img/rootfs.img'])
     ]
 
-with open('/boot/grub/grub.cfg', 'w') as f
+with open('/boot/grub/grub.cfg', 'w') as f:
     f.write(''.join(cfg))
 
 sub(['umount', '/boot'])
@@ -140,4 +141,4 @@ if umountcd:
     sub(['umount', '/cd'])
 
 
-print("Installation complete, to new beginnings :)"
+print("Installation complete, to new beginnings :)")
