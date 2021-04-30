@@ -7,7 +7,7 @@ setuptools.setup(
     author_email="urjaman@gmail.com",
     description="State saving / installation scripts for i586con",
     url="https://github.com/urjaman/i586con",
-    packages=["hdslib"],
+    py_modules=["hdslib"],
     scripts=[
         "bin/hdinstall",
         "bin/cd_save",

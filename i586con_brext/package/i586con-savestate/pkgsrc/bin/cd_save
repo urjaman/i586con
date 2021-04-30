@@ -85,7 +85,7 @@ if __name__ == "__main__":
     if not sub(mkisocmd):
         sys.exit("Creation of the ISO image failed")
 
-    burncmd = ["wodim", devpar, "-multi", "-data"]
+    burncmd = ["wodim", devpar, "-multi"]
     burncmd += sys.argv[1:]
     burncmd.append(isofn)
 
