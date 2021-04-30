@@ -1,0 +1,18 @@
+#!/usr/bin/python3
+
+import os
+import sys
+import subprocess
+import hdslib as hds
+
+if __name__ == "__main__":
+    allfmt = False
+    if len(sys.argv) > 1:
+        if sys.argv[1] == '--all':
+            allfmt = True
+        else:
+            sys.exit("usage: " + sys.argv[0] + " [--all]")
+
+    hds.mount_boot()
+    hds.hd_save(allfmt=allfmt)
+    hds.umount_recorded()
