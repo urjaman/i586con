@@ -1,0 +1,9 @@
+comment "i586con-savestate scripts depend on python3"
+	depends on !BR2_PACKAGE_PYTHON3
+
+config BR2_PACKAGE_I586CON_SAVESTATE
+	bool "i586con-savestate"
+	depends on BR2_PACKAGE_PYTHON3
+	help
+	  Python scripts used to provide hd_save, cd_save, hdinstall
+	  and upgrade_hdi - tools used to save the state of the live system.

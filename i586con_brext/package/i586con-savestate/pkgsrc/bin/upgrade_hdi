@@ -47,10 +47,6 @@ files = [
     ("boot/hd.img", "rd/"),
     ("img/ro-size", "img/"),
     ("img/rootfs.img", "img/"),
-    (
-        "img/save.tgz",
-        None,
-    ),  # Not copied, just checked for existence and unpacked first :)
 ]
 
 upsz = 0
@@ -60,10 +56,6 @@ for f, _ in files:
         upsz += s.st_blocks / 2
     except FileNotFoundError:
         sys.exit("Upgrade missing file: " + f)
-
-tarcmd = ["tar", "xzf", files.pop()[0], "-C", savex]
-if not sub(tarcmd):
-    sys.exit("Unpacking upgrade save tarball failed")
 
 # Using moves to place the new files into their correct
 # places makes it slightly less likely to break the system
@@ -91,11 +83,15 @@ for f, t in files:
         moves.append((fnn, fn))
     if os.path.exists(fnn):
         os.unlink(fnn)
-    if sub(["cp", f, fnn]):
+    if not sub(["cp", f, fnn]):
         sys.exit(f"Copying upgrade file {f} failed")
 
 for frm, to in moves:
     os.replace(frm, to)
+
+os.chdir(savex)
+if hds.unpack_rootfsimg_save('/boot/img'):
+    sys.exit("Unpacking upgrade save files failed")
 
 hds.hd_save(allfmt=True, savestack=savex)
 

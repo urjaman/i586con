@@ -6,7 +6,7 @@ import subprocess
 
 # You can change this here, and all the scripts will learn it :)
 boot_label = "I586CON_BOOT"
-
+# now with hdslib this is ... really sub-optimal. TODO.
 
 def sub(*args, **kwargs):
     p = subprocess.run(*args, **kwargs)

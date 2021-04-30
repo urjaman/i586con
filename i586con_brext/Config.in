@@ -1,1 +1,2 @@
 source "$BR2_EXTERNAL_I586CON_PATH/package/bootbb/Config.in"
+source "$BR2_EXTERNAL_I586CON_PATH/package/i586con-savestate/Config.in"
