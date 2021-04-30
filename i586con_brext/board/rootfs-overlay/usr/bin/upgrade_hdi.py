@@ -45,7 +45,7 @@ files = [
         ( 'boot/cd.img', 'rd/' ),
         ( 'boot/hd.img', 'rd/' ),
         ( 'img/ro-size', 'img/' ),
-        ( 'img/rootfs.img', 'img/' )
+        ( 'img/rootfs.img', 'img/' ),
         ( 'img/save.tgz', None ) # Not copied, just checked for existence and unpacked first :)
         ]
 
