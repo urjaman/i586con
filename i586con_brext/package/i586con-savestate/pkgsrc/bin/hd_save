@@ -8,7 +8,7 @@ import hdslib as hds
 if __name__ == "__main__":
     allfmt = False
     if len(sys.argv) > 1:
-        if sys.argv[1] == '--all':
+        if sys.argv[1] == "--all":
             allfmt = True
         else:
             sys.exit("usage: " + sys.argv[0] + " [--all]")
