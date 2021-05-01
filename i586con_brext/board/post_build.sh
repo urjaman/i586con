@@ -39,6 +39,12 @@ rm -f usr/sbin/smartd
 rm -f etc/smartd_warning.sh
 rm -f etc/smartd.conf
 rm -rf etc/smartd_warning.d
+# We wanted libglib. We got libgio. None of what we wanted actually uses it, or so it seems.
+# This is something to keep an eye on and test libglib-using stuff carefully (sshfs, mc)
+rm -f bin/{gapplication,gdbus,gio,gio-querymodules,gresource,gsettings}
+rm -f lib/libgio-2*
+# After those are gone, a couple of other libg* things are just unused. For now, again.
+rm -f lib/lib{gobject,gthread,gmodule}-*
 cd "$1/usr/share"
 # In case hwdata installs pci.ids, there can be a duplicate pci.ids.gz from pciutils
 # the hwdata non-gzipped one compresses better in squashfs so remove the gz and add
