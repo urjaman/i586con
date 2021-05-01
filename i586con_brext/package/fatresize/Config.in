@@ -1,0 +1,11 @@
+config BR2_PACKAGE_FATRESIZE
+	bool "fatresize"
+	depends on BR2_PACKAGE_PARTED
+	default n
+	help
+	  Resize FAT partitions using libparted
+
+	  https://github.com/ya-mouse/fatresize
+
+comment "fatresize requires parted"
+	depends on !BR2_PACKAGE_PARTED
