@@ -17,6 +17,12 @@ FLAGS=$(tr ' ' '\n' < /proc/cmdline | grep 'mediafsflags=' | cut -d = -f 2-)
 if [ -z "$FLAGS" ]; then
 	FLAGS="ro"
 fi
+# same rationale
+FSTYPE=$(tr ' ' '\n' < /proc/cmdline | grep 'mediafstype=' | cut -d = -f 2-)
+if [ -z "$FSTYPE" ]; then
+	FSTYPE="auto"
+fi
+
 if [ $2 -gt 1 ]; then
 	echo $$ > /waiting-mounter-pid
 fi
@@ -73,7 +79,7 @@ if [ $FOUND -gt 0 ]; then
 		if mountpoint -q "$1"; then
 			exit 0
 		fi
-		mount -o "$FLAGS" "$DEVICE" "$1"
+		mount -t "$FSTYPE" -o "$FLAGS" "$DEVICE" "$1"
 	) 9>/mounting
 fi
 if mountpoint -q "$1"; then

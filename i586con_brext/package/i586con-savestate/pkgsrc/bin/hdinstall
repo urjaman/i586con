@@ -123,7 +123,7 @@ with open("/proc/cmdline") as f:
 vga_param = [x for x in cmdline.split() if x.startswith("vga=")]
 
 k_start = "linux16 /bzImage"
-kern1 = " ".join([k_start, "root=LABEL=" + hds.boot_label] + vga_param)
+kern1 = " ".join([k_start, "root=LABEL=" + hds.boot_label, 'mediafstype=ext4'] + vga_param)
 kern2 = " ".join([k_start, "rootfstype=ramfs"] + vga_param)
 inrd = "initrd16 /rd/"
 
