@@ -12,6 +12,11 @@ else
 	FIND_TYPE="NOTYPE"
 	FIND_VAL="NOVALUE"
 fi
+# rootfsflags saved for the actual tmpfs at / or the kernel rootfs ramfs/tmpfs...
+FLAGS=$(tr ' ' '\n' < /proc/cmdline | grep 'mediafsflags=' | cut -d = -f 2-)
+if [ -z "$FLAGS" ]; then
+	FLAGS="ro"
+fi
 if [ $2 -gt 1 ]; then
 	echo $$ > /waiting-mounter-pid
 fi
@@ -68,7 +73,7 @@ if [ $FOUND -gt 0 ]; then
 		if mountpoint -q "$1"; then
 			exit 0
 		fi
-		mount -o ro "$DEVICE" "$1"
+		mount -o "$FLAGS" "$DEVICE" "$1"
 	) 9>/mounting
 fi
 if mountpoint -q "$1"; then
