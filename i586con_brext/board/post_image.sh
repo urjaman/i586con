@@ -21,6 +21,11 @@ cp $BR2_EXTERNAL_I586CON_PATH/board/initramfs/init-cd mini-initramfs/init
 $HOST_DIR/bin/fakeroot $BR2_EXTERNAL_I586CON_PATH/board/make-initramfs.sh "$(realpath mini-initramfs)" "$(realpath isofs.tmp/boot/cd.img)"
 cp $BR2_EXTERNAL_I586CON_PATH/board/initramfs/init-hd mini-initramfs/init
 $HOST_DIR/bin/fakeroot $BR2_EXTERNAL_I586CON_PATH/board/make-initramfs.sh "$(realpath mini-initramfs)" "$(realpath isofs.tmp/boot/hd.img)"
+AF=$(ls -1 $BR2_EXTERNAL_I586CON_PATH/../*.mp3 2>/dev/null | head -1)
+if [ -e "$AF" ]; then
+	mkdir -p isofs.tmp/mp3
+	cp $BR2_EXTERNAL_I586CON_PATH/../*.mp3 isofs.tmp/mp3/
+fi
 $HOST_DIR/bin/genisoimage -V I586CON -J -r -b isolinux/isolinux.bin -no-emul-boot -boot-load-size 4 -boot-info-table -o i586con.iso isofs.tmp
 rm -rf isofs.tmp mini-initramfs
 $HOST_DIR/bin/isohybrid -t 0x96 i586con.iso
