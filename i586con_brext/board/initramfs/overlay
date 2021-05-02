@@ -1,8 +1,9 @@
 #!source-me/sh
 echo "Setting up overlay..."
 cd .o
-mkdir -p ro usr-ov usr-wk etc-ov etc-wk
+mkdir -p ro usr-ov usr-wk etc-ov etc-wk home-ov home-wk
 losetup -r -o 120 /dev/loop0 "$1"
 mount -t squashfs -o ro /dev/loop0 ro
 mount -t overlay overlay -o lowerdir=ro/usr,upperdir=usr-ov,workdir=usr-wk ../usr
 mount -t overlay overlay -o lowerdir=ro/etc,upperdir=etc-ov,workdir=etc-wk ../etc
+mount -t overlay overlay -o lowerdir=ro/home,upperdir=home-ov,workdir=home-wk ../home
