@@ -1,0 +1,31 @@
+diff --git a/src/src_sinc.c b/src/src_sinc.c
+index 1871684..b592a10 100644
+--- a/src/src_sinc.c
++++ b/src/src_sinc.c
+@@ -33,7 +33,6 @@ typedef float	coeff_t ;
+ 
+ #include "fastest_coeffs.h"
+ #include "mid_qual_coeffs.h"
+-#include "high_qual_coeffs.h"
+ 
+ typedef struct
+ {	int		sinc_magic_marker ;
+@@ -190,17 +189,12 @@ sinc_set_converter (SRC_PRIVATE *psrc, int src_enum)
+ 				break ;
+ 
+ 		case SRC_SINC_MEDIUM_QUALITY :
++		case SRC_SINC_BEST_QUALITY :
+ 				temp_filter.coeffs = slow_mid_qual_coeffs.coeffs ;
+ 				temp_filter.coeff_half_len = ARRAY_LEN (slow_mid_qual_coeffs.coeffs) - 2 ;
+ 				temp_filter.index_inc = slow_mid_qual_coeffs.increment ;
+ 				break ;
+ 
+-		case SRC_SINC_BEST_QUALITY :
+-				temp_filter.coeffs = slow_high_qual_coeffs.coeffs ;
+-				temp_filter.coeff_half_len = ARRAY_LEN (slow_high_qual_coeffs.coeffs) - 2 ;
+-				temp_filter.index_inc = slow_high_qual_coeffs.increment ;
+-				break ;
+-
+ 		default :
+ 				return SRC_ERR_BAD_CONVERTER ;
+ 		} ;
