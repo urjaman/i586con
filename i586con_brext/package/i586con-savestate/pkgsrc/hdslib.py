@@ -180,6 +180,9 @@ def hd_save(allfmt=False, savestack=None):
     for f in undesired:
         unlink(f)
 
+    # Do not try to archive the overlayfs workdirs
+    sub("rm -rf .o/*-wk", shell=True)
+
     savetypes = []
 
     if fmt_bios2ram:

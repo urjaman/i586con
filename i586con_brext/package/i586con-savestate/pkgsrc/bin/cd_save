@@ -7,15 +7,11 @@ import hdslib as hds
 from hdslib import sub
 
 
-def ismsinfo(str):
-    if not str:
+def ismsinfo(s):
+    if not s:
         return False
-    str = str.strip()
-    if str[0] != "(":
-        return False
-    if str[-1] != ")":
-        return False
-    if "," not in str:
+    s = s.strip().decode('utf-8')
+    if "," not in s:
         return False
     return True
 
@@ -49,7 +45,7 @@ if __name__ == "__main__":
     if not ismsinfo(msinfo):
         sys.exit("Could not acquire multisession info from the CD")
 
-    msinfo = msinfo.strip()
+    msinfo = msinfo.strip().decode('utf-8')
 
     mpb = "/tmp/cdsave/"
     hds.mount("tmpfs", mpb[:-1], "tmpfs")
