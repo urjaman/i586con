@@ -1,0 +1,16 @@
+diff --git a/package/libopenssl/libopenssl.mk b/package/libopenssl/libopenssl.mk
+index a10b64c..2c3c7df 100644
+--- a/package/libopenssl/libopenssl.mk
++++ b/package/libopenssl/libopenssl.mk
+@@ -83,8 +83,9 @@ define LIBOPENSSL_CONFIGURE_CMDS
+ 			$(if $(BR2_STATIC_LIBS),no-shared,shared) \
+ 			$(if $(BR2_PACKAGE_HAS_CRYPTODEV),enable-devcryptoeng) \
+ 			no-rc5 \
+-			enable-camellia \
+-			enable-mdc2 \
++			no-camellia \
++			no-mdc2 \
++			no-aria \
+ 			no-tests \
+ 			no-fuzz-libfuzzer \
+ 			no-fuzz-afl \
