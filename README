@@ -5,6 +5,7 @@ need to get to a commandline with some tools pretty quickly.
 A little list of notable tools i've picked:
 - the usual cli partitioning tools
 - ntfs-3g and ntfsprogs
+- fatresize
 - ddrescue
 - rsync
 - cdrkit (wodim, genisoimage)
@@ -12,6 +13,7 @@ A little list of notable tools i've picked:
 less tools, more fun:
 - gpm mouse support (nano, links)
 - links with framebuffer graphics support
+- mocp (Music player, MP3 and FLAC... optimized for myself lol)
 
 How to build:
 use ./fextract.sh to download and extract buildroot
@@ -21,20 +23,46 @@ use ./init_bdir.sh to initialize a build directory
 make to build it (hopefully)
 (Do read the scripts before using them.)
 
-In case you just want the result right now, i have one here:
-https://urja.dev/i586con-210423.iso
-
 ## Tech notes
 -------------
-The boot method is kernel + an actual initrd
-(the RAMDISK style, with a squashfs on it), so 
-that it can fit the entire linux into 64M of ram,
-and the boot media can be removed after the bootloader
-phase.
+There's a couple of boot methods:
+- use linux (kernel+initramfs) to copy the squashfs
+  image from CD to RAM (Linux to RAM)
+- just mount the squashfs image on CD (Run from CD)
+- have the bootloader load everything (BIOS2RAM)
 
-Overlayfs and tmpfs are combined to make
-the interesting parts of the filesystem writable
-(only in ram so everything is lost on reboot or shutdown).
+CD here means just boot media/device
+- we can load from USB stick or a hard drive too...
+
+All of the boot methods above use the img/rootfs.img
+file in some way, it is actually two files concatenated:
+- uncompressed cpio archive of a single
+  squashfs file "ro.sqfs", that contains the initial
+  state of /usr, /etc and /home. This format allows it both
+  to be loaded by the kernel as initramfs (BIOS2RAM), and
+  also loopback mounted from the file with a fixed offset.
+- gzip compressed cpio archive of the rest of the system,
+  including BIOS2RAM init script and tiny boot busybox,
+  plus saved state if hd_save is used
+
+There is a companion file named ro-size that just
+contains the size of the cpio archive that
+contains ro.sqfs. This is to help with hd_save
+and allows "Linux to RAM" to discard the rest
+of rootfs.img on boot.
+
+The point of keeping most of the system in a squashfs
+image in RAM (instad of unpacking a packed initramfs into RAM)
+is to be able to fit the entire linux system in 64M of RAM.
+
+The two first boot methods use img/save.tgz instead
+of the second part of rootfs.img.
+This is to allow cd_save to burn a single file
+on a CD-R to effect a savestate ---
+even if you were to write the full rootfs.img, most
+BIOSes of the era we care about do not understand
+multisession CDs and would boot the first session
+regardless.
 
 It will try to bring up up to one internet
 connection (LAN only) using DHCP, and then
@@ -44,21 +72,6 @@ and it will do this in a very ghetto way
 (eudev runs a script that runs another script
 in a screen that was started into the background
 earlier during the boot).
-
-NB: There's an experimental HD install feature
-of the "best of both worlds" type: compressed
-RAM-based linux from HD with saveable
-state -- the negatives are:
-- you need to list the files to be saved (/etc/saved_files)
-- you need to run hd_save.py to save the files
- - this script is quite wack
-- all the saved files take RAM (in both the ramdisk and tmpfs)
-
-But the positives are that the system is quite customizable,
-requires no disk access past the bootloader and still
-boots without waiting for any devices/udev/whatever
-and thus allows repartitioning the disk it booted from
-if desired.
 
 ## Size note
 ------------
@@ -72,6 +85,8 @@ all the space for us :P
 
 ## ext/
 -------
+
+Note: I havent touched this in a while
 
 Is a little fun adventure of getting a C compiler on an i586con system
 -- buildroot doesn't want to know of this, they purposefully refuse to
