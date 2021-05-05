@@ -1,0 +1,11 @@
+#!source-me/sh
+mkdir -p /alias
+cd /alias
+touch $(cat /sys/bus/pci/devices/*/modalias)
+while read MOD; do
+	MATCH=$(echo $(cat /atamod/alias-$MOD) | tr ' ' '\n' | grep -v '\*')
+	if [ -n "$MATCH" ]; then
+		(cd /atamod; . ./load-$MOD)
+	fi
+done < /atamod/modules
+cd /

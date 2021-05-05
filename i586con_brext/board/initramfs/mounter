@@ -34,6 +34,7 @@ while [ $TRIES -lt $2 ]; do
 	if [ $TRIES -gt 0 ]; then
 		if [ $TRIES -eq 1 ]; then
 			echo "Waiting for media..."
+			/usbload &
 		fi
 		sleep $3
 	fi

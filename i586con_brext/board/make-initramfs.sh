@@ -7,4 +7,4 @@ chmod a+x init busybox
 # this can be used with rdinit=/sh
 rm -f sh
 ln -s busybox sh
-find . -depth -print | cpio -oH newc | gzip -9 > "$2"
+find . -print | cpio -oH newc | gzip -9 > "$2"

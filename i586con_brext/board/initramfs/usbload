@@ -1,0 +1,20 @@
+#!/busybox sh
+cd /alias
+MATCH1=$(echo $(cat /usbmod/alias-1) | tr ' ' '\n' | grep -v '\*')
+MATCH2=$(echo $(cat /usbmod/alias-2) | tr ' ' '\n' | grep -v '\*')
+MATCH4=$(echo $(cat /usbmod/alias-4) | tr ' ' '\n' | grep -v '\*')
+CONTROLLERS=0
+if [ -n "$MATCH1" ]; then
+	CONTROLLERS=1
+fi
+if [ -n "$MATCH2" ]; then
+	CONTROLLERS=$((CONTROLLERS + 2))
+fi
+if [ -n "$MATCH4" ]; then
+	CONTROLLERS=$((CONTROLLERS + 4))
+fi
+if [ $CONTROLLERS -gt 0 ]; then
+	cd /usbmod
+	. ./load-$CONTROLLERS
+	. ./load-common
+fi
