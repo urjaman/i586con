@@ -11,6 +11,7 @@ cd "$1/etc/init.d"
 rm -f S02sysctl
 # do not wait to settle udev before giving a prompt, the
 # login/VTs work just fine without udev too :P
+grep -q children-max S10udev || sed -i 's/udevd -d/udevd --children-max=2 -d/g' S10udev
 sed -i '/udevadm settle/d' S10udev
 cd "$1/etc"
 # Add a bunch of getty's and the log VT
@@ -69,4 +70,6 @@ rm -fr libexec
 cd "$1/usr/bin"
 # give us ldd
 [ -e ldd ] || ln -s ../lib/ld-musl-* ldd
+# make sure our sh points to busybox (bash is a RAM hog, init.d runs with hush just fine)
+rm -f sh; ln -s busybox sh
 exit 0

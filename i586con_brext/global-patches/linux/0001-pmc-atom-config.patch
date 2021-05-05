@@ -1,0 +1,12 @@
+diff --git a/drivers/platform/x86/Kconfig b/drivers/platform/x86/Kconfig
+index 0d91d136b..61760f41a 100644
+--- a/drivers/platform/x86/Kconfig
++++ b/drivers/platform/x86/Kconfig
+@@ -1422,6 +1422,6 @@ config INTEL_TELEMETRY
+ endif # X86_PLATFORM_DEVICES
+ 
+ config PMC_ATOM
+-       def_bool y
++       bool "PMC ATOM"
+        depends on PCI
+        select COMMON_CLK
