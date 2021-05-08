@@ -1,0 +1,53 @@
+diff --git a/init/initramfs.c b/init/initramfs.c
+index 55b74d7e5..918fa0e53 100644
+--- a/init/initramfs.c
++++ b/init/initramfs.c
+@@ -14,6 +14,9 @@
+ #include <linux/namei.h>
+ #include <linux/init_syscalls.h>
+ 
++const unsigned long prefree_chunksz = 4*1024*1024;
++static void __init prefree_initramfs_mem(const void *p);
++
+ static ssize_t __init xwrite(struct file *file, const char *p, size_t count,
+ 		loff_t *pos)
+ {
+@@ -21,7 +24,11 @@ static ssize_t __init xwrite(struct file *file, const char *p, size_t count,
+ 
+ 	/* sys_write only can write MAX_RW_COUNT aka 2G-4K bytes at most */
+ 	while (count) {
+-		ssize_t rv = kernel_write(file, p, count, pos);
++		ssize_t rv = 0;
++		size_t wamt = count;
++		if (count > prefree_chunksz) wamt = prefree_chunksz;
++		prefree_initramfs_mem(p);
++		rv = kernel_write(file, p, wamt, pos);
+ 
+ 		if (rv < 0) {
+ 			if (rv == -EINTR || rv == -EAGAIN)
+@@ -481,6 +488,7 @@ static char * __init unpack_to_rootfs(char *buf, unsigned long len)
+ 			continue;
+ 		}
+ 		this_header = 0;
++		prefree_initramfs_mem(buf);
+ 		decompress = decompress_method(buf, len, &compress_name);
+ 		pr_debug("Detected %s compressed data\n", compress_name);
+ 		if (decompress) {
+@@ -578,6 +586,17 @@ static inline bool kexec_free_initrd(void)
+ }
+ #endif /* CONFIG_KEXEC_CORE */
+ 
++static void __init prefree_initramfs_mem(const void *p) {
++	unsigned long pi = (unsigned long)p;
++	if ((pi < (initrd_start + prefree_chunksz + PAGE_SIZE)) || (pi > initrd_end))
++		return;
++	if (!do_retain_initrd && initrd_start) {
++		// Okay, free _one_ chunk.
++		free_initrd_mem(initrd_start, initrd_start + prefree_chunksz);
++		initrd_start += prefree_chunksz;
++	}
++}
++
+ #ifdef CONFIG_BLK_DEV_RAM
+ static void __init populate_initrd_image(char *err)
+ {
