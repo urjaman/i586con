@@ -1,0 +1,13 @@
+diff --git a/package/libfuse3/libfuse3.mk b/package/libfuse3/libfuse3.mk
+index f805eda..7221475 100644
+--- a/package/libfuse3/libfuse3.mk
++++ b/package/libfuse3/libfuse3.mk
+@@ -23,8 +23,4 @@ define LIBFUSE3_PERMISSIONS
+ 	/usr/bin/fusermount3 f 4755 0 0 - - - - -
+ endef
+ 
+-define LIBFUSE3_LINUX_CONFIG_FIXUPS
+-	$(call KCONFIG_ENABLE_OPT,CONFIG_FUSE_FS)
+-endef
+-
+ $(eval $(meson-package))
