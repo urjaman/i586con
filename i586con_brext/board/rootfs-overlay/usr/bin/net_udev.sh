@@ -1,3 +1,3 @@
 #!/bin/sh
-screen -XS bgscreen eval "screen -t net-$INTERFACE /usr/bin/net_screen.sh $INTERFACE"
+echo "netup $INTERFACE" > /tmp/.netdaemon-pipe
 exit 0

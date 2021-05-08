@@ -1,13 +1,17 @@
 #!/bin/sh
 
 start() {
-	echo "Creating a screen session for net tasks (screen -r bgscreen to use)"
-	screen -dmS bgscreen
+	echo "Launching net_daemon.sh"
+	(/usr/bin/net_daemon.sh &)&
 	return 0
 }
 
 stop() {
-	screen -XS bgscreen quit
+	PIDFILE=/tmp/netdaemon-pid
+	if [ -e "$PIDFILE" ]; then
+		kill -KILL $(cat /tmp/netdaemon-pid)
+		rm -f /tmp/netdaemon-pid
+	fi
 	return 0
 }
 

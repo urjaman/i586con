@@ -21,6 +21,8 @@ grep -q tty4 inittab || sed -i '33 a tty4::respawn:/sbin/getty -L tty4 0 linux' 
 grep -q tty5 inittab || sed -i '34 a tty5::respawn:/sbin/getty -L tty5 0 linux' inittab
 grep -q tty6 inittab || sed -i '35 a tty6::respawn:/sbin/getty -L tty6 0 linux' inittab
 grep -q tty7 inittab || sed -i '36 a tty7::respawn:/usr/bin/tail -f /var/log/messages' inittab
+grep -q "modprobe apm" inittab || sed -i '43 a ::shutdown:/sbin/modprobe apm' inittab
+
 # Add an empty line to the issue text if it's only one line right now :)
 [ "$(cat issue | wc -l)" -lt 2 ] && echo >> issue
 # Don't give me a headache when tab-completing in the dark
