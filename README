@@ -10,13 +10,13 @@ A little list of notable tools i've picked:
 - rsync
 - cdrkit (wodim, genisoimage)
 - flashrom
-less tools, more fun:
+less tools-y, more fun:
 - gpm mouse support (nano, links)
 - links with framebuffer graphics support
 - mocp (Music player, MP3 and FLAC... optimized for myself lol)
 
 How to build:
-use ./fextract.sh to download and extract buildroot
+use ./fextract.sh to download and extract+patch buildroot
 use ./init_bdir.sh to initialize a build directory
 (optionally make menuconfig or make linux-menuconfig
  if you need/want to adjust the kernel or package selection etc)
@@ -68,16 +68,16 @@ It will try to bring up up to one internet
 connection (LAN only) using DHCP, and then
 brings up a ssh daemon (no logins are possible
 until somebody sets a password for some account),
-and it will do this in a very ghetto way 
-(eudev runs a script that runs another script
-in a screen that was started into the background
-earlier during the boot).
+and it will do this in a rather ghetto way -
+eudev runs a script that tells an another
+script-daemon (that was launched earlier) about
+the interface.
 
 ## Size note
 ------------
 Regarding the "runs in 64M of RAM", my hard
-limit is that the squashfs size <= 30 MiB,
-and kernel is well, sane (lets say <= 3.5 MiB packed).
+limit is that the rootfs.img size <= 30 MiB,
+and kernel bzImage is <= 3 MiB.
 
 The ISO-image can in principle contain any
 number of extra things if desired, CDs have
