@@ -1,0 +1,22 @@
+diff --git a/package/links/links.mk b/package/links/links.mk
+index 5213e02..446d2d0 100644
+--- a/package/links/links.mk
++++ b/package/links/links.mk
+@@ -70,12 +70,12 @@ else
+ LINKS_CONF_OPTS += --without-gpm
+ endif
+ 
+-ifeq ($(BR2_PACKAGE_LIBEVENT),y)
+-LINKS_CONF_OPTS += --with-libevent
+-LINKS_DEPENDENCIES += libevent
+-else
++#ifeq ($(BR2_PACKAGE_LIBEVENT),y)
++#LINKS_CONF_OPTS += --with-libevent
++#LINKS_DEPENDENCIES += libevent
++#else
+ LINKS_CONF_OPTS += --without-libevent
+-endif
++#endif
+ 
+ ifeq ($(BR2_PACKAGE_OPENSSL),y)
+ LINKS_CONF_OPTS += --with-ssl --enable-ssl-pkgconfig

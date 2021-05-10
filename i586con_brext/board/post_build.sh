@@ -48,6 +48,10 @@ rm -f bin/{gapplication,gdbus,gio,gio-querymodules,gresource,gsettings}
 rm -f lib/libgio-2*
 # After those are gone, a couple of other libg* things are just unused. For now, again.
 rm -f lib/lib{gobject,gthread,gmodule}-*
+# libevent is only there to allow us to build NTP package, from which we use ntpdate,
+# which does not need libevent... thus get rid of libevent. This also needs care
+# so that we dont accidentally build something against libevent ........ sigh.
+rm -f lib/libevent*
 cd "$1/usr/share"
 # In case hwdata installs pci.ids, there can be a duplicate pci.ids.gz from pciutils
 # the hwdata non-gzipped one compresses better in squashfs so remove the gz and add
