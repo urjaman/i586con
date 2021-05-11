@@ -1,8 +1,4 @@
-# Hush does not provide PS1/PS2 when it is initially running the profile script,
-# even during an interactive login. Thus the only way to find out if we're
-# interactive is to ask tty if stdin is a tty... not a tty -> not interactive
-tty -s
-if [ $? -ne 0 ]; then
+if [ -z "$PS1" ]; then
 	# Shell is non-interactive.  Be done now!
 	return
 fi

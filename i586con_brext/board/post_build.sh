@@ -27,6 +27,11 @@ grep -q "modprobe apm" inittab || sed -i '43 a ::shutdown:/sbin/modprobe apm' in
 [ "$(cat issue | wc -l)" -lt 2 ] && echo >> issue
 # Don't give me a headache when tab-completing in the dark
 sed -i 's/set bell-style visible/set bell-style none/' inputrc
+
+# Fix hush' "noninteractive" parsing of profile; in a way that profile.d scripts need not care,
+# they can safely test PS1
+grep -q "tty -s" profile || sed -i '2 a tty -s <&1 && tty -s && PS1="^ "' profile
+
 cd "$1"
 # non-english mc help files? ehh...
 rm -rf usr/share/mc/help/mc.hlp.*
