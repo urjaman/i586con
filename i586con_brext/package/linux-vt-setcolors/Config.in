@@ -1,0 +1,8 @@
+config BR2_PACKAGE_LINUX_VT_SETCOLORS
+	bool "linux-vt-setcolors"
+	help
+	  Utility tool to set the linux VT default color palette.
+
+	  https://github.com/EvanPurkhiser/linux-vt-setcolors
+
+
