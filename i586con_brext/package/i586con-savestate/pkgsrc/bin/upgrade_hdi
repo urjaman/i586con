@@ -40,57 +40,17 @@ hds.mount(newimg, iso9660_mp, "iso9660", mount_opts(newimg), what="Upgrade image
 os.makedirs(savex, exist_ok=True)
 os.chdir(iso9660_mp)
 
-files = [
-    ("boot/bzImage", ""),
-    ("boot/ram.img", "rd/"),
-    ("boot/cd.img", "rd/"),
-    ("boot/hd.img", "rd/"),
-    ("img/ro-size", "img/"),
-    ("img/rootfs.img", "img/"),
-]
-
-upsz = 0
-for f, _ in files:
-    try:
-        s = os.stat(f)
-        upsz += s.st_blocks / 2
-    except FileNotFoundError:
-        sys.exit("Upgrade missing file: " + f)
-
-# Using moves to place the new files into their correct
-# places makes it slightly less likely to break the system
-# due to media read error or such, but needs some space...
-# So do it if we have the space.
-usemoves = True
-
-fss = os.statvfs("/boot")
-fs_space = (fss.f_frsize * fss.f_bavail) / 1024
-
-if (upsz + 1024) > fs_space:
-    usemoves = False
-    # Incase we're literally running from the disk, we _will_ actually
-    # use ~double the space (2x rootfs.img) even if we "unlink" the file
-    # before, thus ... not enough space.
-    if not os.path.exists("/ro.cpio") and not os.path.exists("/ro.sqfs"):
-        sys.exit("Insufficient disk space for upgrade")
-
-moves = []
-
-for f, t in files:
-    fn = "/boot/" + t + os.path.basename(f)
-    fnn = fn + ".new" if usemoves else fn
-    if usemoves:
-        moves.append((fnn, fn))
-    if os.path.exists(fnn):
-        os.unlink(fnn)
-    if not sub(["cp", f, fnn]):
-        sys.exit(f"Copying upgrade file {f} failed")
-
-for frm, to in moves:
-    os.replace(frm, to)
+pd = hds.updinst_prepare(iso9660_mp, "/boot", upgrade=True)
+hds.desc_moves(pd)
+r = input("Continue? [y/N] ")
+if r.strip().lower()[0] != "y":
+    hds.umount_recorded()
+    print("Bailed and cleaned up. No changes.")
+    sys.exit()
+hds.updinst_exec(iso9660_mp, "/boot", pd)
 
 os.chdir(savex)
-if hds.unpack_rootfsimg_save('/boot/img'):
+if hds.unpack_rootfsimg_save("/boot/img"):
     sys.exit("Unpacking upgrade save files failed")
 
 hds.hd_save(allfmt=True, savestack=savex)

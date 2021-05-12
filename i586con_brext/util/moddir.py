@@ -4,7 +4,7 @@ import os
 import sys
 import subprocess
 
-[moddir, mod, tgtdir] = sys.argv[1:]
+[moddir, tgtdir] = sys.argv[1:3]
 
 modules = {}
 
@@ -15,8 +15,6 @@ with open(moddir + "/modules.dep") as deps:
         mn, _ = fn.split('.ko', maxsplit=1)
         modules[mn] = (module, deps.strip())
 
-if mod not in modules:
-    sys.exit("Module not found")
 
 loadfn = tgtdir + os.path.sep + "load"
 loadscript = open(loadfn, "w")
@@ -44,7 +42,10 @@ def insmod(mod, script, tgtdir):
         doit(dfn, script, tgtdir)
     doit(mpth, script,tgtdir)
 
-insmod(mod, loadscript, tgtdir)
+for mod in sys.argv[3:]:
+    if mod not in modules:
+        sys.exit("Module not found")
+    insmod(mod, loadscript, tgtdir)
 loadscript.close()
 subprocess.run(['chmod', '+x', loadfn])
 print("Whoopsie, done.")

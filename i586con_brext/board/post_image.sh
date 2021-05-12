@@ -26,15 +26,19 @@ $HOST_DIR/bin/fakeroot $BR2_EXTERNAL_I586CON_PATH/board/make-initramfs.sh "$(rea
 mkdir -p isofs.tmp/rdparts
 cp isofs.tmp/boot/{ram,cd,hd}.img isofs.tmp/rdparts
 mkdir -p fsmod
-$BR2_EXTERNAL_I586CON_PATH/util/moddir.py ../target/lib/modules/*.* isofs fsmod
+$BR2_EXTERNAL_I586CON_PATH/util/moddir.py ../target/lib/modules/*.* fsmod isofs
 find fsmod | cpio -o -H newc | gzip > isofs.tmp/rdparts/isofs.cpio.gz
 cat isofs.tmp/rdparts/isofs.cpio.gz >> isofs.tmp/boot/ram.img
 cat isofs.tmp/rdparts/isofs.cpio.gz >> isofs.tmp/boot/cd.img
 cat isofs.tmp/rdparts/isofs.cpio.gz >> isofs.tmp/boot/hd.img
 
 rm fsmod/*
-$BR2_EXTERNAL_I586CON_PATH/util/moddir.py ../target/lib/modules/*.* ext4 fsmod
+$BR2_EXTERNAL_I586CON_PATH/util/moddir.py ../target/lib/modules/*.* fsmod ext4
 find fsmod | cpio -o -H newc | gzip > isofs.tmp/rdparts/ext4.cpio.gz
+
+rm fsmod/*
+$BR2_EXTERNAL_I586CON_PATH/util/moddir.py ../target/lib/modules/*.* fsmod vfat nls_cp437 nls_iso8859-1
+find fsmod | cpio -o -H newc | gzip > isofs.tmp/rdparts/vfat.cpio.gz
 
 cat ro.cpio rootfs.cpio.gz > isofs.tmp/img/rootfs.img
 stat --printf="%s" ro.cpio > isofs.tmp/img/ro-size

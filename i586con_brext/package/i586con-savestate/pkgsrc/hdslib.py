@@ -4,9 +4,9 @@ import os
 import sys
 import subprocess
 
-# You can change this here, and all the scripts will learn it :)
+# This is only backwards compat now; main source is fstab
 boot_label = "I586CON_BOOT"
-# now with hdslib this is ... really sub-optimal. TODO.
+
 
 def sub(*args, **kwargs):
     p = subprocess.run(*args, **kwargs)
@@ -21,14 +21,20 @@ unrw_cd = False
 mount_list = []
 
 
-def mount(frm, to, fs=None, opts=None, record=True, what=None):
+def mount(frm_or_to, to=None, fs=None, opts=None, record=True, what=None):
     global mount_list
+    if to is None:
+        to = frm_or_to
+        frm_opt = []
+    else:
+        frm_opt = [frm_or_to]
+
     os.makedirs(to, exist_ok=True)
     cmd_fs = ["-t", fs] if fs else []
     cmd_opts = ["-o", opts] if opts else []
     if what is None:
         what = to
-    mnt_cmd = ["mount"] + cmd_fs + cmd_opts + [frm, to]
+    mnt_cmd = ["mount"] + cmd_fs + cmd_opts + frm_opt + [to]
     if not sub(mnt_cmd):
         sys.exit(f"Mounting {what} failed ('{' '.join(mnt_cmd)}')")
     ret = len(mount_list)
@@ -70,6 +76,18 @@ def mount_boot(record=True):
         unrw_cd = True
         sub(["mount", "-o", "remount,rw", "/cd"])
         return bind_mount("/cd", "/boot", record=record)
+
+    fstab_boot = False
+    with open("/etc/fstab") as ft:
+        for L in ft:
+            if L.strip()[0] == "#":
+                continue
+            T = L.split()
+            if T[1] == "/boot":
+                fstab_boot = True
+
+    if fstab_boot:
+        return mount("/boot", record=record, what="boot partition")
 
     if not os.path.exists(boot_part):
         sys.exit("Boot partition not found")
@@ -214,3 +232,145 @@ def hd_save(allfmt=False, savestack=None):
 
     msg = " and ".join(savetypes)
     print(f"Save complete - wrote {msg}")
+
+
+def updinst_prepare(src, dst, dstfs=None, upgrade=False):
+    files = [
+        (("boot/bzImage",), ""),
+        (("img/ro-size",), "img/"),
+        (("img/rootfs.img",), "img/"),
+    ]
+    ramdisks = []
+    fsmods = []
+    with os.scandir(src + "/rdparts") as it:
+        for e in it:
+            if e.is_file():
+                if ".cpio" in e.name:
+                    s, _ = e.name.split(".", maxsplit=1)
+                    fsmods += [(s, e.name)]
+                if e.name.endswith(".img"):
+                    ramdisks += [e.name]
+
+                files += [(("rdparts/" + e.name,), "rdparts/")]
+
+    print("files1:")
+    print(files)
+
+    # figure out the destination filesystem; for which fsmod to use
+    if dstfs is None:
+        with open("/proc/mounts") as f:
+            for L in f:
+                M = L.split()
+                if M[1] == dst:
+                    dstfs = M[2]
+        if dstfs is None:
+            sys.exit("Unable to determine dst FS type")
+
+    fsmod = None
+    for fs, fn in fsmods:
+        if fs == dstfs:
+            fsmod = fn
+    if fsmod is None:
+        sys.exit("Missing fsmod .cpio for dst FS")
+
+    for rd in ramdisks:
+        files += [(("rdparts/" + rd, "rdparts/" + fsmod), "rd/")]
+
+    print("files2:")
+    print(files)
+
+    updsz = 0
+    dstsz = 0
+    overwrites = []
+    for fl, dstdir in files:
+        dstname = dst + os.path.sep + dstdir + os.path.basename(fl[0])
+        print("dstname, fl")
+        print(dstname, fl)
+        try:
+            s = os.stat(dstname)
+            dstsz += s.st_blocks / 2
+            overwrites += [dstname]
+        except FileNotFoundError:
+            pass
+
+        for f in fl:
+            try:
+                s = os.stat(src + os.path.sep + f)
+                updsz += s.st_blocks / 2
+            except FileNotFoundError:
+                sys.exit("Missing file: " + f)
+
+    fss = os.statvfs(dst)
+    fs_space = (fss.f_frsize * fss.f_bavail) / 1024
+
+    usemoves = False
+    if overwrites:
+        usemoves = True
+
+    spacetol = 1024
+    if (updsz + spacetol) > fs_space:
+        usemoves = False
+        dstwipesz = dstsz
+        if upgrade and overwrites:
+            if not os.path.exists("/ro.cpio") and not os.path.exists("/ro.sqfs"):
+                for f in overwrites:
+                    if "rootfs.img" in f:
+                        s = os.stat(f)
+                        dstwipesz -= s.st_blocks / 2
+
+        nonmovesz = updsz - dstwipesz
+        if (nonmovesz + spacetol) > fs_space:
+            sys.exit("Insufficient target disk space")
+
+    if upgrade and not overwrites:
+        print("Warning: none of target files exist - is this an upgrade at all?")
+
+    dirs = []
+    if not upgrade:
+        dirs = ["grub", "img", "rd", "rdparts"]
+        if dstfs == "ext4":
+            dirs += ["root"]
+
+    return {
+        "files": files,
+        "usemoves": usemoves,
+        "overwrites": overwrites,
+        "dirs": dirs,
+    }
+
+
+def updinst_exec(src, dst, pd):
+    usemoves = pd["usemoves"]
+    files = pd["files"]
+
+    for d in pd["dirs"]:
+        os.makedirs(dst + os.path.sep + d, exist_ok=True)
+
+    os.chdir(src)
+    moves = []
+    for fl, td in files:
+        fn = dst + os.path.sep + td + os.path.basename(fl[0])
+        fnn = fn + ".new" if usemoves else fn
+        if usemoves:
+            moves.append((fnn, fn))
+        if os.path.exists(fnn):
+            os.unlink(fnn)
+        if len(fl) > 1:
+            with open(fnn, "wb") as tf:
+                if not sub(["cat"] + list(fl), stdout=tf):
+                    sys.exit(f"Writing uprade file {fnn} failed")
+        else:
+            if not sub(["cp", fl[0], fnn]):
+                sys.exit(f"Copying upgrade file {fl[0]} failed")
+
+    for frm, to in moves:
+        os.replace(frm, to)
+
+    os.chdir("/")
+
+
+def desc_moves(pd):
+    if pd["usemoves"]:
+        print("Will write new files as filename.new and rename to filename")
+    else:
+        print("Upgrade will write directly over previous files (low disk space).")

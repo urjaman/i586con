@@ -54,57 +54,146 @@ if not os.path.exists(dpath_part):
 
 partition_nr = sysfs_int(dpath_part)
 partition_size = sysfs_int(devpath(p_majmin) + "size") / 2 / 1024
-# This is just rule-of-thumb'd, if youre serious just change it
-if partition_size < 100.0:
-    sys.exit(f"{pdev} is too small: {partition_size} MiB < 100 MiB")
+## This is just rule-of-thumb'd, if youre serious just change it
+## the point of this limit is: about 100MB is ok, you dont need to hit it exact :P
+if partition_size < 95.0:
+    sys.exit(f"{pdev} is too small: {partition_size} MiB < 95 MiB")
 
-whole_mm = p_majmin[0], p_majmin[1] - partition_nr
+wholedevname = sub(["lsblk", "-no", "pkname", pdev], stdout=subprocess.PIPE)
+if wholedevname:
+    wholedev = "/dev/" + wholedevname.decode().strip()
+    wholedev_stat = stat_blockdev(wholedev)
+    whole_mm = os.major(wholedev_stat.st_rdev), os.minor(wholedev_stat.st_rdev)
+else:
+    sys.exit(f"Couldnt find parent device of {pdev}")
+
 whole_sizegb = sysfs_int(devpath(whole_mm) + "size") / 2 / 1024 / 1024
 
 vend = sysfs_str(devpath(whole_mm) + "device/vendor")
 model = sysfs_str(devpath(whole_mm) + "device/model")
 
-print("The given disk partition will be ERASED, check that it is correct:")
+curr_type = sub(["blkid", "-o", "value", "-s", "TYPE", pdev], stdout=subprocess.PIPE)
+if curr_type is not False:
+    curr_type = curr_type.strip().decode()
+
+print("This is the device to be used:")
 print(f"Device {pdev} is a {partition_size:.1f} MiB partition {partition_nr}")
 print(f"Disk Vendor/Type: {vend}")
 print(f"Disk Model: {model}")
 print(f"Disk Size: {whole_sizegb:.3f} GiB")
+if curr_type:
+    print(f"Current filesystem: {curr_type}")
+
+format = None
+if curr_type in ("ext4", "vfat"):
+    print("Use current filesystem as-is?")
+    r = input("y[es]/n[o]: ")
+    if r.strip().lower()[0] == "y":
+        format = False
+    else:
+        format = True
+else:
+    print("Current filesystem (if any) cannot be used.")
+    format = True
+
+default_label = {"ext4": hds.boot_label, "vfat": "BOOT"}
+
+if format:
+    while format is True:
+        r = input("Choose the filesystem to format to (e[xt4]/[v]fat or quit): ")
+        r = r.strip().lower()
+        if "exit" in r or r[0] == "q":
+            sys.exit("Oh, Bye.")
+        elif r[0] == "e":
+            format = "ext4"
+        elif "fat" in r:
+            format = "vfat"
+        else:
+            print("Couldnt parse that, sorry.")
+
+    print(f"Filesystem chosen: {format}")
+    curr_label = None
+else:
+    curr_label = sub(
+        ["blkid", "-o", "value", "-s", "LABEL", pdev], stdout=subprocess_PIPE
+    )
+    if curr_label is not False:
+        curr_label = curr_label.strip().decode()
+
+if curr_label is None or curr_label == "":
+    if format:
+        setlabel = default_label[format]
+    else:
+        setlabel = default_label[curr_type]
+    print("The filesystem needs a label.")
+    while True:
+        r = input(f"Label [{setlabel}]: ")
+        if " " in r.strip():
+            print("Pls no spaces in this label")
+            continue
+        if r.strip() != "":
+            setlabel = r.strip()
+        break
+    print(f"Label chosen: {setlabel}")
+else:
+    setlabel = False
+
+if format:
+    print("The given disk partition will be ERASED, check that it is correct.")
 r = input("Type yes to continue: ")
 if r.strip().lower() != "yes":
     sys.exit("Everything is as it was.")
 
-print("Continuing in 3 seconds")
-time.sleep(3)
+if format:
+    print("Continuing in 3 seconds")
+    time.sleep(3)
 
-umountcd = False
 if not sub(["mountpoint", "-q", "/cd"]):
-    os.makedirs("/cd", exist_ok=True)
-    schk(
-        ["mount", "-t", "iso9660", "/dev/disk/by-label/I586CON", "/cd"],
-        emsg="Mounting i586con media failed",
-    )
-    umountcd = True
+    hds.mount("/dev/disk/by-label/I586CON", "/cd", "iso9660", what="i586con media")
 
-cdbt = "/cd/boot/"
 bt = "/boot/"
-bzI = "bzImage"
 
-schk(["mkfs.ext4", "-m", "0", "-L", hds.boot_label, pdev], emsg="mkfs.ext4 failed")
-schk(
-    ["mount", "-t", "ext4", pdev, bt],
-    emsg="Mounting the newly created /boot partition failed",
-)
-schk(["cp", cdbt + bzI, bt + bzI], emsg="Copying kernel image failed")
-for d in ("grub", "img", "rd", "root"):
-    os.makedirs(bt + d, exist_ok=True)
-for f in ("ram", "cd", "hd"):
-    schk(["cp", cdbt + f + ".img", bt + "rd/"], emsg="Copying initramfs images failed")
+if format:
+    if format == "ext4":
+        schk(["mkfs.ext4", "-m", "0", "-L", setlabel, pdev], emsg="mkfs.ext4 failed")
+    elif format == "vfat":
+        schk(["mkdosfs", "-n", setlabel, pdev], emsg="mkdosfs failed")
+    else:
+        sys.exit("... format not implemented fully?")
+    # Heyo, got a proper variable for this :P
+    curr_type = format
+    curr_label = setlabel
+else:
+    if setlabel:
+        if format == "ext4":
+            schk(["e2label", pdev, setlabel], emsg="e2label failed")
+        elif format == "vfat":
+            schk(["dosfslabel", pdev, setlabel], emsg="dosfslabel failed")
+        else:
+            sys.exit("... format not implemented fully?")
+        curr_label = setlabel
 
-for f in ("rootfs.img", "ro-size"):
-    schk(["cp", "/cd/img/" + f, "/boot/img/"], emsg="Copying read-only fs image failed")
+hds.mount(pdev, bt, curr_type, what="boot partition")
+
+## perform the main installation
+pd = hds.updinst_prepare("/cd", "/boot", dstfs=curr_type)
+if pd["overwrites"]:
+    hds.desc_moves(pd)
+    print("Warning: the following files will be overwritten:")
+    for f in pd["overwrites"]:
+        print(f)
+    r = input("Continue? [y/N] ")
+    if r.strip().lower()[0] != "y":
+        sys.exit("Bailed.")
+hds.updinst_exec("/cd", "/boot", pd)
+
+## write /boot into fstab before the save
+with open("/etc/fstab", "a+") as f:
+    f.write(f"/dev/disk/by-label/{curr_label} /boot {curr_type} rw,noauto\t0\t0\n")
 
 hds.hd_save(allfmt=True)
 
+## install grub
 schk(["grub-install", grubdev], emsg="grub-install failed")
 
 ## grub.cfg
@@ -123,7 +212,9 @@ with open("/proc/cmdline") as f:
 vga_param = [x for x in cmdline.split() if x.startswith("vga=")]
 
 k_start = "linux16 /bzImage"
-kern1 = " ".join([k_start, "root=LABEL=" + hds.boot_label, 'mediafstype=ext4'] + vga_param)
+kern1 = " ".join(
+    [k_start, "root=LABEL=" + curr_label, "mediafstype=" + curr_type] + vga_param
+)
 kern2 = " ".join([k_start, "rootfstype=ramfs"] + vga_param)
 inrd = "initrd16 /rd/"
 
@@ -134,23 +225,31 @@ set default=0
 set menu_color_highlight=black/light-gray
 set menu_color_normal=light-gray/blue
 set color_normal=cyan/black
-"""[
-    1:
-]
+"""
 
 cfg = [
-    header,
+    header[1:],
     menuentry("i586con/RAM", [kern1, inrd + "ram.img"]),
     menuentry("i586con/CDlike", [kern1, inrd + "cd.img"]),
     menuentry("i586con/BIOS2RAM", [kern2, "initrd16 /img/rootfs.img"]),
 ]
 
-with open("/boot/grub/grub.cfg", "w") as f:
+# Move old grub cfg into safety so that we dont overwrite anyones config forever
+grubcfg = bt + "grub/grub.cfg"
+if os.path.exists(grubcfg):
+    oldidx = 0
+    oldgrub = grubcfg + ".old"
+
+    while os.path.exists(oldgrub):
+        oldidx += 1
+        oldgrub = grubcfg + ".old." + str(oldidx)
+
+    os.replace(grubcfg, oldgrub)
+    print(f"Previous grub.cfg moved to {oldgrub}")
+
+with open(grubcfg, "w") as f:
     f.write("".join(cfg))
+print("Wrote grub.cfg")
 
-sub(["umount", "/boot"])
-if umountcd:
-    sub(["umount", "/cd"])
-
-
+hds.umount_recorded()
 print("Installation complete, to new beginnings :)")
