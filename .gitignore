@@ -2,6 +2,7 @@
 /buildroot-*.tar.*
 /*build/
 /bld/
+/dl/
 /mp3/
 /inst-test-*.qcw2
 /*.iso
