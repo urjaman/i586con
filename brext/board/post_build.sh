@@ -86,6 +86,4 @@ rm -fr libexec
 cd "$1/usr/bin"
 # give us ldd
 [ -e ldd ] || ln -s ../lib/ld-musl-* ldd
-# make sure our sh points to busybox (bash is a RAM hog, init.d runs with hush just fine)
-rm -f sh; ln -s busybox sh
 exit 0
