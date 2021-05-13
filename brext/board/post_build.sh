@@ -28,10 +28,15 @@ grep -q "modprobe apm" inittab || sed -i '43 a ::shutdown:/sbin/modprobe apm' in
 # Don't give me a headache when tab-completing in the dark
 sed -i 's/set bell-style visible/set bell-style none/' inputrc
 
-# Fix hush' "noninteractive" parsing of profile; in a way that profile.d scripts need not care,
-# they can safely test PS1
-grep -q "tty -s" profile || sed -i '2 a tty -s <&1 && tty -s && PS1="^ "' profile
-
+# Fix hush' "noninteractive" parsing of profile,
+# profile.d fragments can test SHFLAGS instead of $-
+grep -q "SHFLAGS" profile
+if [ $? -ne 0 ]; then
+	sed -i '2 a SHFLAGS="$-"' profile
+	sed -i '3 a [[ "$SHFLAGS" != *i* ]] && tty -s <&1 && tty -s && SHFLAGS="i$SHFLAGS"' profile
+	sed -i 's/\[ "$PS1" \]/[[ "$SHFLAGS" == *i* ]]/' profile
+	echo "unset SHFLAGS" >> profile
+fi
 cd "$1"
 # non-english mc help files? ehh...
 rm -rf usr/share/mc/help/mc.hlp.*

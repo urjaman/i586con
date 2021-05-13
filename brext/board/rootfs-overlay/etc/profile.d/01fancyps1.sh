@@ -1,4 +1,4 @@
-if [ -z "$PS1" ]; then
+if [[ "$SHFLAGS" != *i* ]]; then
 	# Shell is non-interactive.  Be done now!
 	return
 fi
