@@ -253,9 +253,6 @@ def updinst_prepare(src, dst, dstfs=None, upgrade=False):
 
                 files += [(("rdparts/" + e.name,), "rdparts/")]
 
-    print("files1:")
-    print(files)
-
     # figure out the destination filesystem; for which fsmod to use
     if dstfs is None:
         with open("/proc/mounts") as f:
@@ -276,16 +273,11 @@ def updinst_prepare(src, dst, dstfs=None, upgrade=False):
     for rd in ramdisks:
         files += [(("rdparts/" + rd, "rdparts/" + fsmod), "rd/")]
 
-    print("files2:")
-    print(files)
-
     updsz = 0
     dstsz = 0
     overwrites = []
     for fl, dstdir in files:
         dstname = dst + os.path.sep + dstdir + os.path.basename(fl[0])
-        print("dstname, fl")
-        print(dstname, fl)
         try:
             s = os.stat(dstname)
             dstsz += s.st_blocks / 2

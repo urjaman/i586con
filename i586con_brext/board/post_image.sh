@@ -33,7 +33,7 @@ cat isofs.tmp/rdparts/isofs.cpio.gz >> isofs.tmp/boot/cd.img
 cat isofs.tmp/rdparts/isofs.cpio.gz >> isofs.tmp/boot/hd.img
 
 rm fsmod/*
-$BR2_EXTERNAL_I586CON_PATH/util/moddir.py ../target/lib/modules/*.* fsmod ext4
+$BR2_EXTERNAL_I586CON_PATH/util/moddir.py ../target/lib/modules/*.* fsmod ext4 crc32c_generic
 find fsmod | cpio -o -H newc | gzip > isofs.tmp/rdparts/ext4.cpio.gz
 
 rm fsmod/*
