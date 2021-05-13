@@ -5,6 +5,8 @@
 # IANAL, I dunno about their licensing, but atleast they're
 # free to download from files.scene.org... I expect no complaints :P
 
+mkdir -p mp3
+cd mp3
 # Use youtube just as a convenient (not really...) media storage platform :P
 DL="youtube-dl -x --audio-format mp3 --audio-quality 192K"
 

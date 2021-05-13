@@ -44,10 +44,8 @@ cat ro.cpio rootfs.cpio.gz > isofs.tmp/img/rootfs.img
 stat --printf="%s" ro.cpio > isofs.tmp/img/ro-size
 cp rootfs.tar.gz isofs.tmp/img/save.tgz
 
-AF=$(ls -1 $BR2_EXTERNAL_I586CON_PATH/../*.mp3 2>/dev/null | head -1)
-if [ -e "$AF" ]; then
-	mkdir -p isofs.tmp/mp3
-	cp $BR2_EXTERNAL_I586CON_PATH/../*.mp3 isofs.tmp/mp3/
+if [ -d "$BR2_EXTERNAL_I586CON_PATH/../mp3" ]; then
+	cp -a "$BR2_EXTERNAL_I586CON_PATH/../mp3" isofs.tmp/
 fi
 $HOST_DIR/bin/genisoimage -V I586CON -J -r -b isolinux/isolinux.bin -no-emul-boot -boot-load-size 4 -boot-info-table -o i586con.iso isofs.tmp
 $HOST_DIR/bin/genisoimage -V I586CON  -J -r -m mp3 -b isolinux/isolinux.bin -no-emul-boot -boot-load-size 4 -boot-info-table -o i586con-upgrade.iso isofs.tmp
