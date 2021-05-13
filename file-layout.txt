@@ -1,0 +1,33 @@
+iso9660 media ("I568CON"):
+isolinux/
+	- isolinux.cfg (all the boot options)
+	- isolinux stuff
+boot/
+	bzImage
+	{ram,cd,hd}.img (with isofs.cpio.* appended)
+rdparts/
+	{ram,cd,hd}.img
+	{isofs,ext4,vfat}.cpio[.{gz,zst..}]
+img/
+	rootfs.img
+	ro-size
+	save.tgz
+
+ext4/vfat bootpart if installed on HD ("I586CON_BOOT"):
+bzImage
+rd/
+	{ram,cd,hd}.img (rdparts/*.img + {ext4/vfat}.cpio*)
+grub/
+	grub.cfg (slightly reduced/different boot options when compared to isolinux.cfg)
+	grub stuff
+rdparts/
+	(same as ISO)
+img/
+	rootfs.img
+	ro-size
+	save.tgz
+root/
+	All the files for the root of the
+	"really running from HD"-installation (only ext4, not implemented yet)
+
+
