@@ -1,6 +1,6 @@
 This is the recipes for a little CONsole-only linux for i586's (or better)
 (thus the i586con name) based on buildroot, for use when you just
-need to get to a commandline with some tools pretty quickly.
+need to get to a commandline with some tools pretty quickly*.
 
 A little list of notable tools i've picked:
 - the usual cli partitioning tools
@@ -12,8 +12,10 @@ A little list of notable tools i've picked:
 - flashrom
 less tools-y, more fun:
 - gpm mouse support (nano, links)
-- links with framebuffer graphics support
+- links browser with framebuffer graphics support
 - mocp (Music player, MP3 and FLAC... optimized for myself lol)
+- linux-vt-setcolors (just "setcolors" on the CLI)
+  + example themes in /usr/share
 
 How to build:
 use ./fextract.sh to download and extract+patch buildroot
@@ -23,12 +25,16 @@ use ./init_bdir.sh to initialize a build directory
 make to build it (hopefully)
 (Do read the scripts before using them.)
 
+If you just want to see what should come out of it,
+you might be able to download an example at:
+https://urja.dev/i586con-210513.iso
+
 ## Tech notes
 -------------
 There's a couple of boot methods:
 - use linux (kernel+initramfs) to copy the squashfs
   image from CD to RAM (Linux to RAM)
-- just mount the squashfs image on CD (Run from CD)
+- same but mount the squashfs image on CD (Run from CD)
 - have the bootloader load everything (BIOS2RAM)
 
 CD here means just boot media/device
@@ -83,6 +89,24 @@ The ISO-image can in principle contain any
 number of extra things if desired, CDs have
 all the space for us :P
 
+## Hardware target
+------------------
+- Pentium 1 upto Pentium 3
+- Boot from PCI PATA/IDE controller (or USB)
+  - BIOS2RAM will boot from anything that your BIOS can, tho
+- Preferably 64M or more of RAM 
+  - 16M in "Run from CD" mode should be able to get a shell
+    (and the first thing you should do is login as root and setup a swapfile/partition somewhere)
+- Optionally USB 1.1 (and even 2.0) as UHCI/OHCI + EHCI
+- Optionally an Ethernet adapter
+- Optionally VESA VBE 2.0 framebuffer graphics
+- Optionally PS/2, USB or serial mouse
+  - serial mouse is untested but the module is included; YMMV
+
+- More than 768M of RAM is too fancy
+- 64-bit processor is too fancy
+
+
 ## ext/
 -------
 
@@ -100,3 +124,16 @@ Anyways, ext/ has scripts to create a "bolt-on" squashfs that can be
 mounted at /opt on an i586con system and provides (for now)
 basic TCC incl. the system headers and crt*.o files from buildroot
 and make.
+
+## *on quickly
+--------------
+Ever tried to boot even a bog-standard modern debian CD
+on an actual Pentium 233? You should grab a drink and a snack for that...
+Or a modern gparted live CD, or other similar things... 
+And this is also a problem for Pentium 2 (and early 3) era hardware.
+That was the initial desire I had when i started this...
+It should just be a small linux system, and be able to drop me
+into a working usable shell snappily - and the less CD drive
+abuse I have to listen to, the better.
+/rant
+
