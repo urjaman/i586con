@@ -1,5 +1,5 @@
 #!/bin/sh
 set -e
 set -x
-./tmpfs-scripts/tmpfs-mount.sh
+./tmpfs-scripts/mount.sh
 tar xf tmpfs.tar
