@@ -5,7 +5,7 @@ if [ "$#" -ne 2 ]; then
 fi
 BRDIR="$(realpath $1)"
 BUILDDIR="$(realpath $2)"
-EXTDIR="$(realpath *_brext)"
+EXTDIR="$(realpath brext)"
 CONFIGNAME=i586con_defconfig
 echo Buildroot dir: $BRDIR
 echo Build dir: $BUILDDIR
