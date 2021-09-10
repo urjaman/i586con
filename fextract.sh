@@ -1,9 +1,18 @@
 #!/bin/sh
 set -e
 set -x
-BR_V=2021.02.2
+BR_V=$(cat br-version)
 BR_N=buildroot-$BR_V.tar.bz2
 [ -e $BR_N ] || wget https://buildroot.org/downloads/$BR_N
+[ -e $BR_N.sign ] || wget https://buildroot.org/downloads/$BR_N.sign
+# You'll need to have manually fetched and trusted their gpg key to use --verify
+if [ "$1" == "--verify" ]; then
+	# The signature they provide is an awkward signed message with SHA1 and MD5
+	# Both are kinda weak but checking both is the best i can do...
+	gpg --verify $BR_N.sign
+	grep 'SHA1:' $BR_N.sign | cut -f 2- -d ' ' | sha1sum -c
+	grep 'MD5:' $BR_N.sign | cut -f 2- -d ' ' | md5sum -c
+fi
 tar xf $BR_N
 mkdir -p dl
 cd buildroot-$BR_V
@@ -12,3 +21,4 @@ patch -Np1 < ../patches4br/0001-package-links-graphics-mode-does-not-depend-on-D
 patch -Np1 < ../patches4br/slimmer-libopenssl.patch
 patch -Np1 < ../patches4br/allow-fuse-module.patch
 patch -Np1 < ../patches4br/links-force-no-libevent.patch
+touch ../.fextract-ok-$BR_V
