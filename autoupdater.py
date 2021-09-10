@@ -18,6 +18,10 @@ toaddr = 'urja' + emhost
 emailproc = ['ssh', 'kbb' + emhost, 'sendmail', '-t']
 email_enabled = False
 
+
+version_file = "br-version"
+prev_version_file = "br-version.old"
+
 def htmlize(s):
     escapes = {
         '&': '&amp;',
@@ -30,43 +34,55 @@ def htmlize(s):
         s = s.replace(k, escapes[k])
     return prefix + s + suffix
 
-def mail(subj, logfn = None, log = None):
+def html_link(link):
+    prefix = '<html><head></head><body><a href="'
+    mid = '">'
+    suffix = '</a></body></html>'
+    return prefix + link + mid + link + suffix
+
+def mail(subj, logfn = None, log = None, link=None):
     if logfn:
         with open(logfn) as f:
             log = f.read()
 
-    attach_threshold = 25
     msg = EmailMessage()
     msg['Subject'] = '[i586con-BB] ' + subj
     msg['From'] = whoami
     msg['To'] = toaddr
 
-    if log.count('\n') > attach_threshold:
-        attach = log;
-        log = log.splitlines()
-        log = log[-attach_threshold:]
-        log = '<snip>\n' + '\n'.join(log) + '\n'
-    else:
-        attach = None
+    if log:
+        snip_threshold = 100
+        if log.count('\n') > snip_threshold:
+            log = log.splitlines()
+            log = log[-snip_threshold:]
+            log = '<snip>\n' + '\n'.join(log) + '\n'
 
-    msg.set_content(log)
-    msg.add_alternative(htmlize(log), subtype='html')
-    if attach:
-        msg.add_attachment(attach, filename='log.txt', cte='quoted-printable')
+        msg.set_content(log)
+        msg.add_alternative(htmlize(log), subtype='html')
+    elif link:
+        msg.set_content(link)
+        msg.add_alternative(html_link(link), subtype='html')
+    else:
+        msg.set_content("\n")
 
     #print(msg)
     if email_enabled:
         subprocess.run(emailproc, input=msg.as_bytes())
 
 
-def subtea(cmd, log, error_subj):
-    proc = subprocess.Popen(cmd, stdin=DEVNULL, stderr=STDOUT, stdout=PIPE)
-    tee = subprocess.Popen(["tee", log], stdin=proc.stdout)
-    r1 = proc.wait()
-    tee.wait()
-    if r1:
-        mail(error_subj, log)
-        sys.exit(1)
+def subtea(cmds, log, error_subj):
+    if not isinstance(cmds[0], list):
+        cmds = [cmds]
+    teecmd = ["tee", log ]
+    for cmd in cmds:
+        proc = subprocess.Popen(cmd, stdin=DEVNULL, stderr=STDOUT, stdout=PIPE)
+        tee = subprocess.Popen(teecmd, stdin=proc.stdout)
+        r1 = proc.wait()
+        tee.wait()
+        if r1:
+            mail(error_subj, log)
+            sys.exit(1)
+        teecmd = ["tee", "-a", log ]
 
 
 def latest_lts():
@@ -100,32 +116,44 @@ def build(v):
     buildroot_dir = os.path.realpath('buildroot-' + v)
     build_dir = os.path.realpath('build-' + v)
     ext_dir = os.path.realpath('brext')
+    imagepath = build_dir + '/images/i586con.iso'
     os.makedirs(build_dir, exist_ok=True)
-    if os.path.exists(build_dir + '/images/i586con.iso'):
-        return
+    if os.path.exists(imagepath):
+        return imagepath
 
     os.chdir(build_dir)
     vb = '[' + v + '] '
 
     cmd = [ 'make', 'BR2_EXTERNAL=' + ext_dir, 'O=' + build_dir, '-C', buildroot_dir ]
-    subtea(cmd + ['i586con_defconfig'], '.i586con-defconfig-log', vb + "buildroot defconfig failed")
+    cmds = [
+        cmd + ['i586con_defconfig'],
+        cmd
+        ]
 
-    log = ".build-log"
-    subtea(cmd, log, vb + "build failed")
-
+    subtea(cmds, "build-log", vb + "build failed")
     os.chdir(rt)
+    return imagepath
 
+def gitup(v):
+    cmds = [
+        ['git', 'add', version_file ],
+        ['git', 'commit', '-m', 'Automatic update to buildroot ' + v ],
+        ['git', 'push' ]
+    ]
+    subtea(cmds, ".gitops-log", "git failed")
+
+def publish(v, image):
+    targetpath = 'i586con_autobuilds/i586con-' + v + '.iso'
+    cmd = [ "scp", image, "urja.dev:srv/" + targetpath ]
+    subtea(cmd, ".scp-log", "scp failed")
+    mail("i586con updated to " + v, link='https://urja.dev/' + targetpath)
 
 if len(sys.argv) >= 2:
     if sys.argv[1] == '--email':
         email_enabled = True
 
-version_file = "br-version"
-prev_version_file = "br-version.old"
-
 with open(version_file) as f:
     prev_version = f.read().strip()
-
 
 cur_version = latest_lts()
 
@@ -141,7 +169,9 @@ if cur_version != prev_version:
 if not os.path.exists('.fextract-ok-' + cur_version):
     run_fextract(cur_version)
 
-build(cur_version)
-
-
+imagefile = build(cur_version)
+gitup(cur_version)
+# This is a misnomer now, but ehhhh .... *shrug*
+if email_enabled:
+    publish(cur_version, imagefile)
 os.unlink(prev_version_file)

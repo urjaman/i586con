@@ -1,8 +1,12 @@
 /buildroot-*/
 /buildroot-*.tar.*
-/*build/
+/*build*/
 /bld/
 /dl/
 /mp3/
 /inst-test-*.qcw2
 /*.iso
+*-log
+/.fextract-ok*
+/logs/
+/updatercron.lock
