@@ -155,20 +155,31 @@ def gitcommit(v):
 def version():
     return subc(["./version.sh"], stdout=PIPE).decode().strip()
 
+
 def publish(fullv, image):
+    rt = os.path.realpath('.')
     cmds = [
         [ 'git', 'push' ]
     ]
     isoname = 'i586con-' + fullv + '.iso'
     targetpath = 'i586con_autobuilds/'
     if email_enabled: # Misnomer but ... maintainer mode-ish
-        info = { 'filename': isoname }
-        with open("latest.json","w") as f:
+        reldir = os.path.realpath('releases')
+        os.makedirs(reldir, exist_ok=True)
+        os.chdir(reldir)
+
+        info = { 'filename': isoname, 'version': fullv }
+        jsf = "latest.json"
+        jsfnew = "latest.json.new"
+        with open(jsfnew,"w") as f:
             json.dump(info,f)
         cmds.append([ "cp", image, isoname ])
         cmds.append([ "gpg", "-u", "urja+i586con@urja.dev", "-a", "-b", isoname ])
-        cmds.append([ "scp", isoname, isoname + ".asc", "latest.json", "urja.dev:srv/" + targetpath ])
-    subtea(cmd, ".publish-log", "publish failed")
+        cmds.append([ "scp", isoname, isoname + ".asc", jsfnew, "urja.dev:srv/" + targetpath ])
+        cmds.append([ "ssh","urja.dev","cd", 'srv/' + targetpath, "&&", "mv", jsfnew, jsf ])
+        cmds.append([ "rm", "-f", jsfnew ]) # cleanup
+    subtea(cmds, rt + "/.publish-log", "publish failed")
+    os.chdir(rt)
     mail(f"i586con {fullv} built", link='https://urja.dev/' + targetpath + isoname)
 
 if len(sys.argv) >= 2:
@@ -208,7 +219,35 @@ if not os.path.exists(fextract_ok_f):
     run_fextract(cur_version)
 
 imagefile = build(cur_version, full_version)
-publish(cur_version, imagefile)
-
+publish(full_version, imagefile)
 os.unlink(prev_version_file)
 
+# Cleanup processes (these failing is safe-ish, no need to panicmail :P)
+
+# Clean out the oldest builds & buildroots
+build_count = 2
+build_list = [ ]
+rmlist = []
+with os.scandir('.') as entries:
+    for entry in entries:
+        # Include the "2" from the year number so that we dont accidentally
+        # wipe out stuff if you name it buildroot-things-that-i-like or whatever
+        if entry.name.startswith("buildroot-2"):
+            if entry.name.startswith("buildroot-" + cur_version):
+                continue
+            rmlist.append(entry.path)
+
+        if entry.name.startswith("Build-"):
+            build_list.append([entry.stat().st_mtime, entry.path])
+
+
+build_list.sort(reverse=True, key=lambda e: e[0]) # sort by mtime
+#print(len(build_list))
+#print(build_list)
+for e in build_list[build_count:]:
+        rmlist.append(e[1])
+
+if rmlist:
+    print("Removing these:")
+    print(rmlist)
+    sub(["rm", "-rf" ] + rmlist)

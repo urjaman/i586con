@@ -10,4 +10,5 @@
 *-log
 /.fextract-ok*
 /logs/
+/releases/
 /updatercron.lock
