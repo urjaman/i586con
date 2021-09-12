@@ -43,7 +43,7 @@ rm -rf usr/share/mc/help/mc.hlp.*
 # we only need the posix zoneinfo (if even that but i like the idea...)
 rm -rf usr/share/zoneinfo/right
 # these python modules are not needed for our use case
-rm -rf usr/lib/python*/{ensurepip,distutils,unittest,email,turtle*}
+rm -rf usr/lib/python*/{ensurepip,distutils,unittest,turtle*}
 # the stdcpp gdb helper thing is very not needed
 rm -f usr/lib/libstdc++.so.*-gdb.py
 # we only need smartctl, not the rest of smartmontools
