@@ -2,11 +2,8 @@
 import os
 import sys
 import urllib.request
-import urllib.error
-import shutil
+import json
 import subprocess
-import time
-import datetime
 from subprocess import DEVNULL, PIPE, STDOUT
 from email.message import EmailMessage
 
@@ -17,7 +14,6 @@ whoami = 'i586con-BB <kbb' + emhost + '>'
 toaddr = 'urja' + emhost
 emailproc = ['ssh', 'kbb' + emhost, 'sendmail', '-t']
 email_enabled = False
-
 
 version_file = "br-version"
 prev_version_file = "br-version.old"
@@ -69,6 +65,21 @@ def mail(subj, logfn = None, log = None, link=None):
     if email_enabled:
         subprocess.run(emailproc, input=msg.as_bytes())
 
+def subc(*args, **kwargs):
+    c = subprocess.run(*args, **kwargs)
+    if c.returncode != 0:
+        print("subprocess failed: ", args)
+        print("code:", c.returncode)
+        sys.exit(1)
+    return c.stdout
+
+def sub(*args, **kwargs):
+    c = subprocess.run(*args, **kwargs)
+    if c.returncode != 0:
+        return False
+    if c.stdout:
+        return c.stdout
+    return True
 
 def subtea(cmds, log, error_subj):
     if not isinstance(cmds[0], list):
@@ -111,10 +122,10 @@ def run_fextract(v):
     cmd = [ "./fextract.sh", "--verify" ]
     subtea(cmd, log, '[' + v + '] problem fetching/patching buildroot')
 
-def build(v):
+def build(brv, fullv):
     rt = os.path.realpath('.')
-    buildroot_dir = os.path.realpath('buildroot-' + v)
-    build_dir = os.path.realpath('build-' + v)
+    buildroot_dir = os.path.realpath('buildroot-' + brv)
+    build_dir = os.path.realpath('Build-' + fullv)
     ext_dir = os.path.realpath('brext')
     imagepath = build_dir + '/images/i586con.iso'
     os.makedirs(build_dir, exist_ok=True)
@@ -122,7 +133,7 @@ def build(v):
         return imagepath
 
     os.chdir(build_dir)
-    vb = '[' + v + '] '
+    vb = '[' + fullv + '] '
 
     cmd = [ 'make', 'BR2_EXTERNAL=' + ext_dir, 'O=' + build_dir, '-C', buildroot_dir ]
     cmds = [
@@ -134,19 +145,31 @@ def build(v):
     os.chdir(rt)
     return imagepath
 
-def gitup(v):
+def gitcommit(v):
     cmds = [
         ['git', 'add', version_file ],
         ['git', 'commit', '-m', 'Automatic update to buildroot ' + v ],
-        ['git', 'push' ]
     ]
     subtea(cmds, ".gitops-log", "git failed")
 
-def publish(v, image):
-    targetpath = 'i586con_autobuilds/i586con-' + v + '.iso'
-    cmd = [ "scp", image, "urja.dev:srv/" + targetpath ]
-    subtea(cmd, ".scp-log", "scp failed")
-    mail("i586con updated to " + v, link='https://urja.dev/' + targetpath)
+def version():
+    return subc(["./version.sh"], stdout=PIPE).decode().strip()
+
+def publish(fullv, image):
+    cmds = [
+        [ 'git', 'push' ]
+    ]
+    isoname = 'i586con-' + fullv + '.iso'
+    targetpath = 'i586con_autobuilds/'
+    if email_enabled: # Misnomer but ... maintainer mode-ish
+        info = { 'filename': isoname }
+        with open("latest.json","w") as f:
+            json.dump(info,f)
+        cmds.append([ "cp", image, isoname ])
+        cmds.append([ "gpg", "-u", "urja+i586con@urja.dev", "-a", "-b", isoname ])
+        cmds.append([ "scp", isoname, isoname + ".asc", "latest.json", "urja.dev:srv/" + targetpath ])
+    subtea(cmd, ".publish-log", "publish failed")
+    mail(f"i586con {fullv} built", link='https://urja.dev/' + targetpath + isoname)
 
 if len(sys.argv) >= 2:
     if sys.argv[1] == '--email':
@@ -154,24 +177,38 @@ if len(sys.argv) >= 2:
 
 with open(version_file) as f:
     prev_version = f.read().strip()
+full_prev_version = version()
 
 cur_version = latest_lts()
 
-if cur_version == prev_version and not os.path.exists(prev_version_file):
-    print("Nothing to update.")
-    sys.exit(0)
+# Run a pull in case I've updated stuff elsewhere in the meantime
+sub(['git','pull'])
 
 if cur_version != prev_version:
     os.rename(version_file, prev_version_file)
     with open(version_file, 'w') as f:
         f.write(cur_version + '\n')
+    gitcommit(cur_version)
 
-if not os.path.exists('.fextract-ok-' + cur_version):
+full_version = version()
+
+if full_version == full_prev_version and not os.path.exists(prev_version_file):
+    print("Nothing to update.")
+    sys.exit(0)
+
+fextract_ok_f = '.fextract-ok-' + cur_version
+
+if full_version != full_prev_version and cur_version == prev_version:
+    brpath = "buildroot-" + cur_version
+    if os.path.exists(br):
+        subc(['rm','-rf', brpath])
+        subc(['rm', '-f', fextract_ok_f])
+
+if not os.path.exists(fextract_ok_f):
     run_fextract(cur_version)
 
-imagefile = build(cur_version)
-gitup(cur_version)
-# This is a misnomer now, but ehhhh .... *shrug*
-if email_enabled:
-    publish(cur_version, imagefile)
+imagefile = build(cur_version, full_version)
+publish(cur_version, imagefile)
+
 os.unlink(prev_version_file)
+

@@ -86,4 +86,7 @@ rm -fr libexec
 cd "$1/usr/bin"
 # give us ldd
 [ -e ldd ] || ln -s ../lib/ld-musl-* ldd
+# Add our own version file
+cd "$1/etc"
+$BR2_EXTERNAL_I586CON_PATH/util/version.sh > i586con_version
 exit 0
