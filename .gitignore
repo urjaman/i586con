@@ -1,11 +1,12 @@
 /buildroot-*/
 /buildroot-*.tar.*
-/*build*/
+/Build-*/
 /bld/
 /dl/
 /mp3/
 /inst-test-*.qcw2
 /*.iso
+/*.asc
 *-log
 /.fextract-ok*
 /logs/
