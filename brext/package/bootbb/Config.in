@@ -2,7 +2,7 @@ config BR2_PACKAGE_BOOTBB
 	bool "Boot BusyBox"
 	default n
 	help
-	  A second copy of busybox to install as /.busybox, for special
+	  A second copy of busybox to install as /busybox, for special
 	  use during the boot process, or as a rescue shell.
 
 	  The Swiss Army Knife of embedded Linux. It slices, it dices,

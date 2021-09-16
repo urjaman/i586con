@@ -4,15 +4,12 @@
 #
 ################################################################################
 
-BOOTBB_VERSION = 1.33.0
+BOOTBB_VERSION = 1.33.1
 BOOTBB_SITE = https://www.busybox.net/downloads
 BOOTBB_SOURCE = busybox-$(BOOTBB_VERSION).tar.bz2
 BOOTBB_LICENSE = GPL-2.0, bzip2-1.0.4
 BOOTBB_LICENSE_FILES = LICENSE archival/libarchive/bz/LICENSE
 BOOTBB_CPE_ID_VENDOR = busybox
-
-# 0004-decompress_gunzip-Fix-DoS-if-gzip-is-corrupt.patch
-BOOTBB_IGNORE_CVES += CVE-2021-28831
 
 define BOOTBB_HELP_CMDS
 	@echo '  bootbb-menuconfig     - Run BusyBox (boot/2nd copy) menuconfig'
