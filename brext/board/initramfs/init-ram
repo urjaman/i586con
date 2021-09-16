@@ -5,9 +5,11 @@
 echo "Unpacking save.tgz..."
 tar xf cd/img/save.tgz
 echo "Copying read-only image to RAM..."
-cp cd/img/rootfs.img ro.cpio
-truncate -s $(cat cd/img/ro-size) ro.cpio
-. /overlay "../ro.cpio"
+mkdir -p .o/Z
+[ -e /dev/zram0 ] && mount -t ramfs ramfs .o/Z
+cp cd/img/rootfs.img .o/Z/ro.cpio
+truncate -s $(cat cd/img/ro-size) .o/Z/ro.cpio
+. /overlay "Z/ro.cpio"
 cd /mnt
 [ -x preinit.sh ] && ./preinit.sh
 umount /mnt/cd

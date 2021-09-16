@@ -21,7 +21,7 @@ if __name__ == "__main__":
         if sys.argv[1] == "--help" or sys.argv[1] == "-h":
             sys.exit(f"usage: {sys.argv[0]} [additional parameters to wodim]")
 
-    if not os.path.exists("/ro.cpio"):
+    if not os.path.exists("/.o/Z/ro.cpio"):
         print(
             'Saving state to CD-R is only possible when booted with the "Linux to RAM" boot method.'
         )
@@ -56,7 +56,7 @@ if __name__ == "__main__":
     # none of the save methods wants these in the root of the save image
     os.chdir(mpb + "savemp")
     # dont save the whole effing RO :P
-    hds.unlink("ro.cpio")
+    hds.unlink(".o/Z/ro.cpio")
     # make the "CD directory" and create a save.tgz there
     os.makedirs(mpb + "cd/img", exist_ok=True)
     hds.pack_savetgz(mpb + "cd/img")

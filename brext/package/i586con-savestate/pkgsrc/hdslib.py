@@ -194,7 +194,7 @@ def hd_save(allfmt=False, savestack=None):
 
     # none of the save methods wants these in the root of the save image
     os.chdir(mpb + "savemp")
-    undesired = ("ro.sqfs", "ro.cpio")
+    undesired = ("ro.sqfs", ".o/Z/ro.cpio")
     for f in undesired:
         unlink(f)
 
@@ -304,7 +304,7 @@ def updinst_prepare(src, dst, dstfs=None, upgrade=False):
         usemoves = False
         dstwipesz = dstsz
         if upgrade and overwrites:
-            if not os.path.exists("/ro.cpio") and not os.path.exists("/ro.sqfs"):
+            if not os.path.exists("/.o/Z/ro.cpio") and not os.path.exists("/ro.sqfs"):
                 for f in overwrites:
                     if "rootfs.img" in f:
                         s = os.stat(f)

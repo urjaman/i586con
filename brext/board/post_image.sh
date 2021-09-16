@@ -16,6 +16,8 @@ mkdir -p mini-initramfs/atamod
 $BR2_EXTERNAL_I586CON_PATH/util/atamoddir.py ../target/lib/modules/*.* mini-initramfs/atamod ../target/lib/modules/*.*/kernel/drivers/ata/*.ko
 mkdir -p mini-initramfs/usbmod
 $BR2_EXTERNAL_I586CON_PATH/util/usbmoddir.py ../target/lib/modules/*.* mini-initramfs/usbmod usb-storage usbhid hid-generic
+mkdir -p mini-initramfs/zram
+$BR2_EXTERNAL_I586CON_PATH/util/moddir.py ../target/lib/modules/*.* mini-initramfs/zram lzo_rle zram
 cp $BR2_EXTERNAL_I586CON_PATH/board/initramfs/init-ram mini-initramfs/init
 $HOST_DIR/bin/fakeroot $BR2_EXTERNAL_I586CON_PATH/board/make-initramfs.sh "$(realpath mini-initramfs)" "$(realpath isofs.tmp/boot/ram.img)"
 cp $BR2_EXTERNAL_I586CON_PATH/board/initramfs/init-cd mini-initramfs/init

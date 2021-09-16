@@ -14,6 +14,8 @@ with open(moddir + "/modules.dep") as deps:
         dir, fn = os.path.split(module)
         mn, _ = fn.split('.ko', maxsplit=1)
         modules[mn] = (module, deps.strip())
+        if '-' in mn:
+            modules[mn.replace('-','_')] = (module, deps.strip())
 
 
 loadfn = tgtdir + os.path.sep + "load"
@@ -48,5 +50,5 @@ for mod in sys.argv[3:]:
     insmod(mod, loadscript, tgtdir)
 loadscript.close()
 subprocess.run(['chmod', '+x', loadfn])
-print("Whoopsie, done.")
+print("Moddir created.")
 
