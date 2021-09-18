@@ -80,10 +80,12 @@ def html_esc(s):
 
 
 def htmlscreen(screen, embeddable=False):
-    prefix = "" if embeddable else "<html><head></head><body>"
-    suffix = "" if embeddable else "</body></html>"
-    css = "div { display: inline; }\n"
-    css += "pre { font-family:monospace; font-size:16px; width: 80ch; color: #AAA; background-color: #000 }\n"
+    prefix = '<!DOCTYPE html>\n<html><head><meta charset="utf-8"/></head><body>'
+    suffix = '</body></html>'
+    if embeddable:
+        prefix = ""
+        suffix = ""
+
     colortab = {
     'black':        '0',
     "red":          '1',
@@ -121,32 +123,59 @@ def htmlscreen(screen, embeddable=False):
         "#5FF",
         "#FFF"
     ]
+
     seq = "0123456789ABCDEF"
     colorcss = [ ]
-
     for i in range(16):
         c = seq[i]
         colorcss.append(f".F{c} {{ color: {colors[i]}; }}")
-
     for i in range(16):
         c = seq[i]
         colorcss.append(f".B{c} {{ background-color: {colors[i]}; }}")
 
+    presettings = [
+            "font-family: monospace",
+            "font-size: 16px",
+            "display: table",
+            f"color: {colors[7]}",
+            f"background-color: {colors[0]}"
+            ]
+    css = "pre { " + '; '.join(presettings) + "; }\n"
+
+
     usedcol = []
     outhtml = "<pre>"
-    indiv = False
+    infmt = False
     for y in range(screen.lines):
         format = ('default', 'default')
         os = ''
         line = screen.buffer[y]
         for x in range(screen.columns):
+            crsr = False
+            if not screen.cursor.hidden:
+                if screen.cursor.x == x and screen.cursor.y == y:
+                    outhtml += html_esc(os)
+                    os = ''
+                    crsr = True
             fmnew = (line[x].fg, line[x].bg)
-            if line[x].bold and not line[x].fg.startswith("bright"):
+            if line[x].bold or line[x].reverse: # undefault
+                if fmnew[0] == 'default':
+                    fmnew = ("white", fmnew[1])
+                if fmnew[1] == 'default':
+                    fmnew = (fmnew[0], "black")
+            if line[x].bold and not fmnew[0].startswith("bright"):
                 fmnew = ("bright" + fmnew[0], fmnew[1])
+            if line[x].reverse:
+                fmnew = (fmnew[1], fmnew[0])
+            # re-default :P (this simplifies the output HTML)
+            if fmnew[0] == 'white':
+                fmnew = ('default', fmnew[1])
+            if fmnew[1] == 'black':
+                fmnew = (fmnew[0], 'default')
             if fmnew != format:
-                e = '</div>' if indiv else ''
+                e = '</span>' if infmt else ''
                 outhtml += html_esc(os) + e
-                indiv = False
+                infmt = False
                 if fmnew != ('default', 'default'):
                     clrclass = []
                     if fmnew[0] != 'default':
@@ -158,16 +187,19 @@ def htmlscreen(screen, embeddable=False):
                     for c in clrclass:
                         if c not in usedcol:
                             usedcol.append(c)
-                    outhtml += '<div class="' + ' '.join(clrclass) + '">'
-                    indiv = True
+                    outhtml += '<span class="' + ' '.join(clrclass) + '">'
+                    infmt = True
                 os = line[x].data
                 format = fmnew
             else:
                 os += line[x].data
+            if crsr:
+                outhtml += '<u>' + html_esc(os) + '</u>'
+                os = ''
         outhtml += html_esc(os)
-        if indiv:
-            outhtml += '</div>'
-            indiv = False
+        if infmt:
+            outhtml += '</span>'
+            infmt = False
         outhtml += "\n"
     outhtml += "</pre>"
     usedcolorcss = []
@@ -191,18 +223,18 @@ def screenprint(screen, filename=None):
 
 events_simple = [
     EA("Automatic boot in", "\r", to=10, L=19),
-    EA("i586con login:", "root\r", to=60),
+    EA("i586con login:", "root\r", to=100),
     EA('i586con ~ #', "poweroff\r", to=20),
     ]
 
 events_ssh = [
     EA("Automatic boot in", "\r", to=10, L=19),
-    EA("i586con login:", "user\r", to=60),
+    EA("i586con login:", "user\r", to=100),
     EA('user@i586con ~ $',
-        "mkdir -p .ssh\recho 'SSH-KEY' > .ssh/authorized_keys\rcd .ssh\r", to=10),
-    EA('user@i586con ~/.ssh $', "while ! pidof sshd; do sleep 1; done; cd /\r", to=10),
-    EA('user@i586con / $', ["ssh", "qemu-i586con", "exit"], to=120),
-    EA('', "su -c poweroff\r", to=10),
+        "mkdir -p .ssh\recho 'SSH-KEY' > .ssh/authorized_keys\rcd .ssh\r", to=20),
+    EA('user@i586con ~/.ssh $', "while ! pidof sshd; do sleep 1; done; sleep 5; cd /\r", to=10),
+    EA('user@i586con / $', ["ssh", "qemu-i586con", "exit"], to=400),
+    EA('', "su -c poweroff\r", to=20),
     ]
 
 def streamfeed(mstr, stream, timeout=1.0):
@@ -256,6 +288,14 @@ def humanlytype(mstr, stream, text):
     if k:
         writekeys(b, k)
 
+def timeoutcheck(t, timeout, screen, descr):
+    n = now() - t
+    if n > timeout:
+        print(f"{descr} Timeout {timeout}:")
+        screenprint(screen, "cursed-timeout.html")
+        sys.exit(1)
+
+
 def main():
     events = events_simple
     argn = 1
@@ -289,9 +329,10 @@ def main():
             except KeyboardInterrupt:
                 break
             if eventi < len(events):
+                to = events[eventi].timeout
                 r = events[eventi].check_and_respond(screen)
                 if r:
-                    print("Event Tripped - screen:")
+                    print(f"Event {eventi} Tripped {now() - t:.3f}/{to}:")
                     screenprint(screen, f"cursed-event{eventi}.html")
                     if isinstance(r, list):
                         subc(r)
@@ -301,16 +342,10 @@ def main():
                     counter = 0
                     t = now()
                     continue
-                n = now() - t
-                if n > events[eventi].timeout:
-                    print(f"Event '{events[eventi].match}'({eventi}) Timeout - screen:")
-                    screenprint(screen, "cursed-timeout.html")
-                    sys.exit(1)
+                timeoutcheck(t, to, screen, f"Event '{events[eventi].match}'({eventi})")
             else:
-                if (now() - t) > 80.0:
-                    print("Shutdown Timeout - screen:")
-                    screenprint(screen, "cursed-timeout.html")
-                    sys.exit(1)
+                to = 80.0
+                timeoutcheck(t, to, screen, "Shutdown")
 
             if counter >= 10:
                 #print("Screen:")
@@ -320,7 +355,7 @@ def main():
         pass
 
     os.close(mstr)
-    print("Final Screen:")
+    print(f"Final Screen {now() - t:.3f}/{to}:")
     screenprint(screen, "cursed-finish.html")
 
     if eventi < len(events):
