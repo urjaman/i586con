@@ -79,32 +79,16 @@ def html_esc(s):
         s = s.replace(k, escapes[k])
     return s
 
+def link(tgt, text):
+    return f'<a href="{tgt}">{html_esc(text)}</a>'
 
-def htmlscreen(screen, embeddable=False):
+def htmlfinalize(usedcol, htmls, embeddable=False):
     prefix = '<!DOCTYPE html>\n<html><head><meta charset="utf-8"/></head><body>'
     suffix = '</body></html>'
     if embeddable:
         prefix = ""
         suffix = ""
 
-    colortab = {
-    'black':        '0',
-    "red":          '1',
-    "green":        '2',
-    "brown":        '3',
-    "blue":         '4',
-    "magenta":      '5',
-    "cyan":         '6',
-    "white":        '7',
-    "brightblack":  '8',
-    "brightred":    '9',
-    "brightgreen":  'A',
-    "brightbrown":  'B',
-    "brightblue":   'C',
-    "brightmagenta":'D',
-    "brightcyan":   'E',
-    "brightwhite":  'F'
-    }
     colors = [ # spot the odd ones ;P
         "#000",
         "#A00",
@@ -134,17 +118,97 @@ def htmlscreen(screen, embeddable=False):
         c = seq[i]
         colorcss.append(f".B{c} {{ background-color: {colors[i]}; }}")
 
+    # This is the most artsy part of the CSS
+    stylecss = """
+a:link, a:visited {
+  color: #d70;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+h3 {
+    margin: 0.1em;
+}
+
+body {
+  font: 20px Helvetica,arial,freesans,clean,sans-serif;
+  background-color: #1E1E1E;
+  color: #C0C0C0;
+}
+"""
+
+    # This onwards is CSS that relates technically to the terminal displays etc
     presettings = [
             "font-family: monospace",
             "font-size: 16px",
-            "display: table",
+            "width: 80ch",
             f"color: {colors[7]}",
             f"background-color: {colors[0]}"
             ]
-    css = "pre { " + '; '.join(presettings) + "; }\n"
+    css  = stylecss + "#spacer { height: calc(100vh - 400px) }\n"
+    css += "pre { " + '; '.join(presettings) + "; }\n"
 
+    fullout = ''
+    off = 0
+    for name, html in htmls:
+        out = f"<h3 id=\"t{off}\">" + html_esc(name) + "</h3>\n"
+        out += html
+        if len(htmls) > 1:
+            linklist = [("#t0", "<<FIRST<<"), (f"#t{off-1}", "<PREV<"),
+                        (f"#t{off+1}", ">NEXT>"), (f"#t{len(htmls)-1}", ">>LAST>>")]
+            links = []
+            if off == 0:
+                links.append(html_esc(linklist[0][1]))
+                links.append(html_esc(linklist[1][1]))
+            else:
+                links.append(link(*linklist[0]))
+                links.append(link(*linklist[1]))
+            if off == len(htmls)-1:
+                links.append(html_esc(linklist[2][1]))
+                links.append(html_esc(linklist[3][1]))
+            else:
+                links.append(link(*linklist[2]))
+                links.append(link(*linklist[3]))
+            out += ' | '.join(links)
 
-    usedcol = []
+        off += 1
+        out += '\n<div id="spacer"><br/><br/></div>\n'
+        fullout += out
+
+    usedcolorcss = []
+    for cv in colorcss:
+        for v in usedcol:
+            if cv[1:3] == v:
+                usedcolorcss.append(cv)
+                break
+    style = "<style>" + css + '\n'.join(usedcolorcss) + '\n</style>'
+    return prefix + style + fullout + suffix
+
+def htmlscreen(screen, usedcol = None):
+    if usedcol is None:
+        usedcol = []
+    colortab = {
+    'black':        '0',
+    "red":          '1',
+    "green":        '2',
+    "brown":        '3',
+    "blue":         '4',
+    "magenta":      '5',
+    "cyan":         '6',
+    "white":        '7',
+    "brightblack":  '8',
+    "brightred":    '9',
+    "brightgreen":  'A',
+    "brightbrown":  'B',
+    "brightblue":   'C',
+    "brightmagenta":'D',
+    "brightcyan":   'E',
+    "brightwhite":  'F'
+    }
+
     outhtml = "<pre>"
     infmt = False
     for y in range(screen.lines):
@@ -203,23 +267,19 @@ def htmlscreen(screen, embeddable=False):
             infmt = False
         outhtml += "\n"
     outhtml += "</pre>"
-    usedcolorcss = []
-    for cv in colorcss:
-        for v in usedcol:
-            if cv[1:3] == v:
-                usedcolorcss.append(cv)
-                break
-    style = "<style>\n" + css + '\n'.join(usedcolorcss) + '\n</style>'
-    return prefix + style + outhtml + suffix
+    return outhtml
 
-
-def screenprint(screen, filename=None):
+def screenprint(screen, htmlmeta, desc, final=False):
     disp = screen.display
     for y in range(len(disp)):
         print(f"{y:02d} {disp[y]}")
-    if filename:
-        with open(filename, "w") as f:
-            f.write(htmlscreen(screen))
+    if desc:
+        h = htmlscreen(screen, htmlmeta[0])
+        htmlmeta.append( (desc, h))
+    if final:
+        with open("cursed.html", "w") as f:
+            f.write(htmlfinalize(htmlmeta[0], htmlmeta[1:]))
+
 
 
 events_simple = [
@@ -289,11 +349,11 @@ def humanlytype(mstr, stream, text):
     if k:
         writekeys(b, k)
 
-def timeoutcheck(t, timeout, screen, descr):
+def timeoutcheck(t, timeout, screen, htmlmeta, descr):
     n = now() - t
     if n > timeout:
         print(f"{descr} Timeout {timeout}:")
-        screenprint(screen, "cursed-timeout.html")
+        screenprint(screen, htmlmeta, "{descr} timeout", final=True)
         sys.exit(1)
 
 
@@ -322,7 +382,7 @@ def main():
 
     counter = 0
     eventi = 0
-
+    htmlmeta = [[]]
     try:
         while True:
             try:
@@ -334,7 +394,7 @@ def main():
                 r = events[eventi].check_and_respond(screen)
                 if r:
                     print(f"Event {eventi} Tripped {now() - t:.3f}/{to}:")
-                    screenprint(screen, f"cursed-event{eventi}.html")
+                    screenprint(screen, htmlmeta, events[eventi].desc)
                     if isinstance(r, list):
                         subc(r)
                     else:
@@ -343,10 +403,10 @@ def main():
                     counter = 0
                     t = now()
                     continue
-                timeoutcheck(t, to, screen, f"Event '{events[eventi].desc}'({eventi})")
+                timeoutcheck(t, to, screen, htmlmeta, events[eventi].desc)
             else:
                 to = 80.0
-                timeoutcheck(t, to, screen, "Shutdown")
+                timeoutcheck(t, to, screen, htmlmeta, "Shutdown")
 
             if counter >= 10:
                 #print("Screen:")
@@ -357,7 +417,10 @@ def main():
 
     os.close(mstr)
     print(f"Final Screen {now() - t:.3f}/{to}:")
-    screenprint(screen, "cursed-finish.html")
+    desc = "Final"
+    if eventi < len(events):
+        desc += " (Early Shutdown)"
+    screenprint(screen, htmlmeta, desc, final=True)
 
     if eventi < len(events):
         print("Premature Shutdown.")
