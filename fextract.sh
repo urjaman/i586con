@@ -9,9 +9,10 @@ BR_N=buildroot-$BR_V.tar.bz2
 if [ "$1" == "--verify" ]; then
 	# The signature they provide is an awkward signed message with SHA1 and MD5
 	# Both are kinda weak but checking both is the best i can do...
-	gpg --verify $BR_N.sign
-	grep 'SHA1:' $BR_N.sign | cut -f 2- -d ' ' | sha1sum -c
-	grep 'MD5:' $BR_N.sign | cut -f 2- -d ' ' | md5sum -c
+	gpg --output signed_sums --verify $BR_N.sign
+	grep 'SHA1:' signed_sums | cut -f 2- -d ' ' | sha1sum -c
+	grep 'MD5:' signed_sums | cut -f 2- -d ' ' | md5sum -c
+	rm -f signed_sums
 fi
 tar xf $BR_N
 mkdir -p dl
