@@ -122,10 +122,10 @@ def run_fextract(v):
     cmd = [ "./fextract.sh", "--verify" ]
     subtea(cmd, log, '[' + v + '] problem fetching/patching buildroot')
 
-def build(brv, fullv):
+def build(brpath, buildpath, fullv):
     rt = os.path.realpath('.')
-    buildroot_dir = os.path.realpath('buildroot-' + brv)
-    build_dir = os.path.realpath('Build-' + fullv)
+    buildroot_dir = os.path.realpath(brpath)
+    build_dir = os.path.realpath(buildpath)
     ext_dir = os.path.realpath('brext')
     imagepath = build_dir + '/images/i586con.iso'
     os.makedirs(build_dir, exist_ok=True)
@@ -170,57 +170,83 @@ def publish(fullv, image):
 
         info = { 'filename': isoname, 'version': fullv }
         jsf = "latest.json"
-        jsfnew = "latest.json.new"
-        with open(jsfnew,"w") as f:
+        jsfasc = jsf + ".asc"
+        jsfnew = jsfasc + ".new"
+        with open(jsf,"w") as f:
             json.dump(info,f)
         cmds.append([ "cp", image, isoname ])
-        cmds.append([ "gpg", "-u", "urja+i586con@urja.dev", "-a", "-b", isoname ])
+        gpg = [ "gpg", "-u", "urja+i586con\x40urja.dev" ]
+        cmds.append( gpg + [ "-a", "-b", isoname ])
+        cmds.append( gpg + [ "--clear-sign", jsf ])
+        cmds.append([ "mv", jsfasc, jsfnew ])
         cmds.append([ "scp", isoname, isoname + ".asc", jsfnew, "urja.dev:srv/" + targetpath ])
-        cmds.append([ "ssh","urja.dev","cd", 'srv/' + targetpath, "&&", "mv", jsfnew, jsf ])
-        cmds.append([ "rm", "-f", jsfnew ]) # cleanup
+        cmds.append([ "ssh","urja.dev","cd", 'srv/' + targetpath, "&&", "mv", jsfnew, jsfasc ])
+        cmds.append([ "rm", "-f", jsf, jsfnew ]) # cleanup
     subtea(cmds, rt + "/.publish-log", "publish failed")
     os.chdir(rt)
     mail(f"i586con {fullv} built", link='https://urja.dev/' + targetpath + isoname)
 
+rebuild = False
 if len(sys.argv) >= 2:
-    if sys.argv[1] == '--email':
-        email_enabled = True
+    for e in sys.argv[1:]:
+        if e == '--email':
+            email_enabled = True
+        elif e == '--rebuild':
+            rebuild = True
+        else:
+            print(f"usage: {sys.argv[0]} [--email|--rebuild]")
+            sys.exit(1)
 
-with open(version_file) as f:
-    prev_version = f.read().strip()
-full_prev_version = version()
+if not rebuild:
+    # Update
+    with open(version_file) as f:
+        prev_brversion = f.read().strip()
+    full_prev_version = version()
 
-cur_version = latest_lts()
+    cur_brversion = latest_lts()
 
-# Run a pull in case I've updated stuff elsewhere in the meantime
-sub(['git','pull'])
+    # Run a pull in case I've updated stuff elsewhere in the meantime
+    sub(['git','pull'])
 
-if cur_version != prev_version:
-    os.rename(version_file, prev_version_file)
-    with open(version_file, 'w') as f:
-        f.write(cur_version + '\n')
-    gitcommit(cur_version)
+    if cur_brversion != prev_brversion:
+        os.rename(version_file, prev_version_file)
+        with open(version_file, 'w') as f:
+            f.write(cur_brversion + '\n')
+        gitcommit(cur_brversion)
 
-full_version = version()
+    full_version = version()
 
-if full_version == full_prev_version and not os.path.exists(prev_version_file):
-    print("Nothing to update.")
-    sys.exit(0)
+    if full_version == full_prev_version and not os.path.exists(prev_version_file):
+        print("Nothing to update.")
+        sys.exit(0)
+else:
+    # Rebuild
+    with open(version_file) as f:
+        cur_brversion = f.read().strip()
 
-fextract_ok_f = '.fextract-ok-' + cur_version
+    full_version = version()
 
-if full_version != full_prev_version and cur_version == prev_version:
-    brpath = "buildroot-" + cur_version
-    if os.path.exists(br):
-        subc(['rm','-rf', brpath])
-        subc(['rm', '-f', fextract_ok_f])
+
+fextract_ok_f = '.fextract-ok-' + cur_brversion
+brpath = "buildroot-" + cur_brversion
+buildpath = "Build-" + full_version
+
+if rebuild:
+    subc(['rm', '-rf', brpath, buildpath, fextract_ok_f])
+else:
+    if full_version != full_prev_version and cur_brversion == prev_brversion:
+        if os.path.exists(brpath):
+            subc(['rm','-rf', brpath, fextract_ok_f])
 
 if not os.path.exists(fextract_ok_f):
-    run_fextract(cur_version)
+    run_fextract(cur_brversion)
 
-imagefile = build(cur_version, full_version)
+imagefile = build(brpath, buildpath, full_version)
 publish(full_version, imagefile)
-os.unlink(prev_version_file)
+try:
+    os.unlink(prev_version_file)
+except Exception:
+    pass
 
 # Cleanup processes (these failing is safe-ish, no need to panicmail :P)
 
@@ -233,7 +259,7 @@ with os.scandir('.') as entries:
         # Include the "2" from the year number so that we dont accidentally
         # wipe out stuff if you name it buildroot-things-that-i-like or whatever
         if entry.name.startswith("buildroot-2"):
-            if entry.name.startswith("buildroot-" + cur_version):
+            if entry.name.startswith("buildroot-" + cur_brversion):
                 continue
             rmlist.append(entry.path)
 
