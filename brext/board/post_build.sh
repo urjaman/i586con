@@ -1,8 +1,16 @@
-#!/bin/sh
+#!/bin/bash
 echo "XXXXXXXXXXXXXX RUNNING POST BUILD SCRIPT XXXXXXXXXXXXXXXXXX"
 cd "$1/etc/init.d"
 # do not autostart sshd like this (started by the net scripts)
 [ -e S50sshd ] && mv S50sshd N50sshd
+# sshd starts up faster if we just use ED25519 host key... thus:
+# disable but leave commented the ssh-keygen -A call
+grep -q '#ssh-keygen' N50sshd || sed -i 's/ssh-keygen/#ssh-keygen/' N50sshd
+# add a special call to only make an ED25519 host key
+grep -q 'ed25519' N50sshd || sed -i $'13 a \t[ -e /etc/ssh/ssh_host_ed25519_key ] || ssh-keygen -q -N "" -t ed25519 -f /etc/ssh/ssh_host_ed25519_key'
+# config sshd to expect just ED25519
+sed -i 's|#HostKey /etc/ssh/ssh_host_ed25519_key|HostKey /etc/ssh/ssh_host_ed25519_key|' ../ssh/sshd_config
+
 # do not auto-do the urandom stuff since we have no randomness on a CD
 [ -e S20urandom ] && mv S20urandom N20urandom
 # do not autostart telnetd, FFS (it exists to allow manual careful use in controlled environments, not autorunning lol)
