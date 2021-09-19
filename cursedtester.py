@@ -46,7 +46,8 @@ def boxit(argv, rows=25, cols=80):
 # Anyways, this describes how the tester does things
 
 class EA:
-    def __init__(self, match, reply, to=30.0, L=-1):
+    def __init__(self, descr, match, reply, to=30.0, L=-1):
+        self.desc = descr
         self.match = match
         self.reply = reply
         self.line = L
@@ -222,19 +223,19 @@ def screenprint(screen, filename=None):
 
 
 events_simple = [
-    EA("Automatic boot in", "\r", to=10, L=19),
-    EA("i586con login:", "root\r", to=100),
-    EA('i586con ~ #', "poweroff\r", to=20),
+    EA("bootloader", "Automatic boot in", "\r", to=10, L=19),
+    EA("login prompt", "i586con login:", "root\r", to=100),
+    EA("logged in", 'i586con ~ #', "poweroff\r", to=20),
     ]
 
 events_ssh = [
-    EA("Automatic boot in", "\r", to=10, L=19),
-    EA("i586con login:", "user\r", to=100),
-    EA('user@i586con ~ $',
+    EA("bootloader", "Automatic boot in", "\r", to=10, L=19),
+    EA("login prompt", "i586con login:", "user\r", to=100),
+    EA("logged in", 'user@i586con ~ $',
         "mkdir -p .ssh\recho 'SSH-KEY' > .ssh/authorized_keys\rcd .ssh\r", to=20),
-    EA('user@i586con ~/.ssh $', "while ! pidof sshd; do sleep 1; done; sleep 5; cd /\r", to=10),
-    EA('user@i586con / $', ["ssh", "qemu-i586con", "exit"], to=400),
-    EA('', "su -c poweroff\r", to=20),
+    EA("ssh key entered", 'user@i586con ~/.ssh $', "while ! pidof sshd; do sleep 1; done; sleep 5; cd /\r", to=10),
+    EA("sshd started", 'user@i586con / $', ["ssh", "qemu-i586con", "exit"], to=400),
+    EA("ssh test complete", '', "su -c poweroff\r"),
     ]
 
 def streamfeed(mstr, stream, timeout=1.0):
@@ -342,7 +343,7 @@ def main():
                     counter = 0
                     t = now()
                     continue
-                timeoutcheck(t, to, screen, f"Event '{events[eventi].match}'({eventi})")
+                timeoutcheck(t, to, screen, f"Event '{events[eventi].desc}'({eventi})")
             else:
                 to = 80.0
                 timeoutcheck(t, to, screen, "Shutdown")
