@@ -13,10 +13,17 @@ emhost =  '\x40' + 'urja' + '.dev'
 whoami = 'i586con-BB <kbb' + emhost + '>'
 toaddr = 'urja' + emhost
 emailproc = ['ssh', 'kbb' + emhost, 'sendmail', '-t']
-email_enabled = False
 
 version_file = "br-version"
 prev_version_file = "br-version.old"
+
+s = {
+    'email': False,
+    'cont': False,
+    'rebuild': False,
+}
+
+
 
 def htmlize(s):
     escapes = {
@@ -62,7 +69,7 @@ def mail(subj, logfn = None, log = None, link=None):
         msg.set_content("\n")
 
     #print(msg)
-    if email_enabled:
+    if s['email']:
         subprocess.run(emailproc, input=msg.as_bytes())
 
 def subc(*args, **kwargs):
@@ -163,7 +170,7 @@ def publish(fullv, image):
     ]
     isoname = 'i586con-' + fullv + '.iso'
     targetpath = 'i586con_autobuilds/'
-    if email_enabled: # Misnomer but ... maintainer mode-ish
+    if s['email']: # Misnomer but ... maintainer mode-ish
         reldir = os.path.realpath('releases')
         os.makedirs(reldir, exist_ok=True)
         os.chdir(reldir)
@@ -186,18 +193,24 @@ def publish(fullv, image):
     os.chdir(rt)
     mail(f"i586con {fullv} built", link='https://urja.dev/' + targetpath + isoname)
 
-rebuild = False
+updatemode = True
 if len(sys.argv) >= 2:
     for e in sys.argv[1:]:
         if e == '--email':
-            email_enabled = True
+            s['email'] = True
         elif e == '--rebuild':
-            rebuild = True
+            s['rebuild'] = True
+            updatemode = False
+        elif e == '--continue':
+            s['cont'] = True
+            updatemode = False
         else:
-            print(f"usage: {sys.argv[0]} [--email|--rebuild]")
+            print(f"usage: {sys.argv[0]} [--email|--rebuild|--continue]")
             sys.exit(1)
 
-if not rebuild:
+
+
+if updatemode:
     # Update
     with open(version_file) as f:
         prev_brversion = f.read().strip()
@@ -220,7 +233,7 @@ if not rebuild:
         print("Nothing to update.")
         sys.exit(0)
 else:
-    # Rebuild
+    # Rebuild / Continue
     with open(version_file) as f:
         cur_brversion = f.read().strip()
 
@@ -231,9 +244,9 @@ fextract_ok_f = '.fextract-ok-' + cur_brversion
 brpath = "buildroot-" + cur_brversion
 buildpath = "Build-" + full_version
 
-if rebuild:
+if s['rebuild']:
     subc(['rm', '-rf', brpath, buildpath, fextract_ok_f])
-else:
+elif updatemode:
     if full_version != full_prev_version and cur_brversion == prev_brversion:
         if os.path.exists(brpath):
             subc(['rm','-rf', brpath, fextract_ok_f])
