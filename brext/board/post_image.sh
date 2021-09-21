@@ -51,5 +51,6 @@ if [ -d "$BR2_EXTERNAL_I586CON_PATH/../mp3" ]; then
 fi
 $HOST_DIR/bin/genisoimage -V I586CON -J -r -b isolinux/isolinux.bin -no-emul-boot -boot-load-size 4 -boot-info-table -o i586con.iso isofs.tmp
 $HOST_DIR/bin/genisoimage -V I586CON  -J -r -m mp3 -b isolinux/isolinux.bin -no-emul-boot -boot-load-size 4 -boot-info-table -o i586con-upgrade.iso isofs.tmp
+(cd isofs.tmp; ls --block-size=K -s boot/bzImage img/rootfs.img)
 rm -rf isofs.tmp mini-initramfs fsmod
 $HOST_DIR/bin/isohybrid -t 0x96 i586con.iso
