@@ -9,6 +9,7 @@ boot_label = "I586CON_BOOT"
 
 cfgdir = "/etc/i586con/"
 
+
 def sub(*args, **kwargs):
     p = subprocess.run(*args, **kwargs)
     if p.returncode != 0:
@@ -375,7 +376,7 @@ def fetch_check_iso(filename=None, version=None):
 
     if version:
         if not filename:
-            filename = f'i586con-{version}.iso'
+            filename = f"i586con-{version}.iso"
     if not filename:
         return None
 
@@ -383,13 +384,13 @@ def fetch_check_iso(filename=None, version=None):
         urlbase = f.read().strip()
 
     r = urllib.request.urlopen(urlbase + filename, timeout=30)
-    rlen = int(r.headers['Content-Length'])
+    rlen = int(r.headers["Content-Length"])
     print(f"Downloading {rlen/1024.:.1f} KiB")
     with open(filename, "w+b") as tgt:
         l = 0
         p = 0
         while True:
-            d = r.read(32*1024)
+            d = r.read(32 * 1024)
             if not d:
                 break
             tgt.write(d)
@@ -397,8 +398,8 @@ def fetch_check_iso(filename=None, version=None):
             np = (l * 100) // rlen
             if np > p:
                 inc = np - p
-                print("." * inc, end='', flush=True)
-                p = np # lmao
+                print("." * inc, end="", flush=True)
+                p = np  # lmao
 
     print("")
 
@@ -409,10 +410,12 @@ def fetch_check_iso(filename=None, version=None):
         shutil.copyfileobj(r, tgt)
 
     print("Verifying signature...")
-    cmd = ["gpgv","--keyring", cfgdir + 'pubkey.gpg', asc, filename ]
+    cmd = ["gpgv", "--keyring", cfgdir + "pubkey.gpg", asc, filename]
     if not sub(cmd):
         print("Verification failed :(")
-        print("This means the .iso could've been tampered with - or just a bad download.")
+        print(
+            "This means the .iso could've been tampered with - or just a bad download."
+        )
         print("Bailing out for you to check out the wreckage...")
         sys.exit(1)
 
@@ -431,8 +434,18 @@ def get_latest_iso_version():
 
     r = urllib.request.urlopen(urlbase + "latest.json.asc", timeout=30)
     # The old gnupg we shipped makes this a whopper of a command...
-    cmd = ["gpg", "--no-default-keyring", "--keyring", cfgdir + 'pubkey.gpg',
-        "--trust-model", "always", "--decrypt", "-o", "-", "-" ]
+    cmd = [
+        "gpg",
+        "--no-default-keyring",
+        "--keyring",
+        cfgdir + "pubkey.gpg",
+        "--trust-model",
+        "always",
+        "--decrypt",
+        "-o",
+        "-",
+        "-",
+    ]
     blob = r.read()
     jsonb = sub(cmd, input=blob, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
     if not jsonb:

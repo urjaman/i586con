@@ -16,27 +16,30 @@ def mount_opts(path):
     return opts + ",loop"
 
 
-
-if len(sys.argv) > 2 or (len(sys.argv) == 2 and sys.argv[1][0] == '-'):
-    sys.exit("Usage: " + sys.argv[0] + " [new-i586con.iso] # Default is internet-based upgrade check")
+if len(sys.argv) > 2 or (len(sys.argv) == 2 and sys.argv[1][0] == "-"):
+    sys.exit(
+        "Usage: "
+        + sys.argv[0]
+        + " [new-i586con.iso] # Default is internet-based upgrade check"
+    )
 
 hds.mount_boot()
 del_internet_iso = False
-if len(sys.argv) == 1: # Check the internetz
-    os.chdir('/boot')
+if len(sys.argv) == 1:  # Check the internetz
+    os.chdir("/boot")
     v = hds.my_version()
     nv = hds.get_latest_iso_version()
-    if v == nv['version']:
+    if v == nv["version"]:
         print("No upgrade necessary - you're running the latest version.")
         os.chdir("/")
         hds.umount_recorded()
         sys.exit(0)
     print(f"Fetching new version {nv['version']}")
 
-    fn = hds.fetch_check_iso(nv['filename'],nv['version'])
+    fn = hds.fetch_check_iso(nv["filename"], nv["version"])
     newimg = os.path.realpath(fn)
     del_internet_iso = True
-    os.chdir('/')
+    os.chdir("/")
 else:
     newimg = sys.argv[1]
 
