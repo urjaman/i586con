@@ -24,14 +24,17 @@ loadscript.write("#!/sh\n")
 
 loaded = []
 
-def doit(mfn, script, tgtdir):
+def doit(mfn, script, tgtdir, ignore=False):
     global loaded
     if mfn in loaded:
         return
     subprocess.run(['cp',moddir + os.path.sep + mfn,tgtdir]).check_returncode()
     loaded.append(mfn)
     dir, fn = os.path.split(mfn)
-    script.write(f"insmod {fn}\n")
+    if ignore:
+        script.write(f"insmod {fn} 2>/dev/null\n")
+    else:
+        script.write(f"insmod {fn}\n")
     
 def insmod(mod, script, tgtdir):
     global modules
@@ -41,7 +44,7 @@ def insmod(mod, script, tgtdir):
         return
     mpth, deps  = modules[mod]
     for dfn in reversed(deps.split()):
-        doit(dfn, script, tgtdir)
+        doit(dfn, script, tgtdir, ignore=True)
     doit(mpth, script,tgtdir)
 
 for mod in sys.argv[3:]:
