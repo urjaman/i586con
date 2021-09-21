@@ -7,6 +7,7 @@ import subprocess
 # This is only backwards compat now; main source is fstab
 boot_label = "I586CON_BOOT"
 
+cfgdir = "/etc/i586con/"
 
 def sub(*args, **kwargs):
     p = subprocess.run(*args, **kwargs)
@@ -366,3 +367,81 @@ def desc_moves(pd):
         print("Will write new files as filename.new and rename to filename")
     else:
         print("Upgrade will write directly over previous files (low disk space).")
+
+
+def fetch_check_iso(filename=None, version=None):
+    import urllib.request
+    import shutil
+
+    if version:
+        if not filename:
+            filename = f'i586con-{version}.iso'
+    if not filename:
+        return None
+
+    with open(cfgdir + "upstreamurl") as f:
+        urlbase = f.read().strip()
+
+    r = urllib.request.urlopen(urlbase + filename, timeout=30)
+    rlen = int(r.headers['Content-Length'])
+    print(f"Downloading {rlen/1024.:.1f} KiB")
+    with open(filename, "w+b") as tgt:
+        l = 0
+        p = 0
+        while True:
+            d = r.read(32*1024)
+            if not d:
+                break
+            tgt.write(d)
+            l += len(d)
+            np = (l * 100) // rlen
+            if np > p:
+                inc = np - p
+                print("." * inc, end='', flush=True)
+                p = np # lmao
+
+    print("")
+
+    asc = filename + ".asc"
+    print("Fetching signature...")
+    r = urllib.request.urlopen(urlbase + asc, timeout=30)
+    with open(asc, "w+b") as tgt:
+        shutil.copyfileobj(r, tgt)
+
+    print("Verifying signature...")
+    cmd = ["gpgv","--keyring", cfgdir + 'pubkey.gpg', asc, filename ]
+    if not sub(cmd):
+        print("Verification failed :(")
+        print("This means the .iso could've been tampered with - or just a bad download.")
+        print("Bailing out for you to check out the wreckage...")
+        sys.exit(1)
+
+    # Cleanup the sig file (we've already verified it, and the calling code doesnt care about it)
+    unlink(asc)
+    print("Download and verify complete - continuing...")
+    return filename
+
+
+def get_latest_iso_version():
+    import urllib.request
+    import json
+
+    with open(cfgdir + "upstreamurl") as f:
+        urlbase = f.read().strip()
+
+    r = urllib.request.urlopen(urlbase + "latest.json.asc", timeout=30)
+    # The old gnupg we shipped makes this a whopper of a command...
+    cmd = ["gpg", "--no-default-keyring", "--keyring", cfgdir + 'pubkey.gpg',
+        "--trust-model", "always", "--decrypt", "-o", "-", "-" ]
+    blob = r.read()
+    jsonb = sub(cmd, input=blob, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    if not jsonb:
+        print("Fetching and verifying latest.json.asc failed :(")
+        sys.exit(1)
+
+    return json.loads(jsonb.decode())
+
+
+def my_version():
+    with open(cfgdir + "version") as f:
+        return f.read().strip()

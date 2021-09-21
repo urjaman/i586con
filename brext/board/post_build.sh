@@ -96,5 +96,5 @@ cd "$1/usr/bin"
 [ -e ldd ] || ln -s ../lib/ld-musl-* ldd
 # Add our own version file
 cd "$1/etc"
-$BR2_EXTERNAL_I586CON_PATH/util/version.sh > i586con_version
+$BR2_EXTERNAL_I586CON_PATH/util/version.sh > i586con/version
 exit 0

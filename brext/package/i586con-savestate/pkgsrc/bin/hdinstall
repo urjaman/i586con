@@ -36,12 +36,17 @@ def stat_blockdev(path):
         sys.exit(f"{path} is not a block device node.")
     return x
 
+ab = 1
+from_internet = False
+if len(sys.argv) >= 2 and sys.argv[ab] == '--from_internet':
+    from_internet = True
+    ab = 2
 
-if len(sys.argv) != 3:
-    sys.exit(f"usage: {sys.argv[0]} <hdd_part_dev> <grub_install_dev>")
+if len(sys.argv[ab:]) != 2:
+    sys.exit(f"usage: {sys.argv[0]} [--from_internet] <hdd_part_dev> <grub_install_dev>")
 
-pdev = sys.argv[1]
-grubdev = sys.argv[2]
+pdev = sys.argv[ab]
+grubdev = sys.argv[ab+1]
 
 pstat = stat_blockdev(pdev)
 stat_blockdev(grubdev)
@@ -96,7 +101,7 @@ else:
     print("Current filesystem (if any) cannot be used.")
     format = True
 
-default_label = {"ext4": hds.boot_label, "vfat": "BOOT"}
+default_label = {"ext4": hds.boot_label, "vfat": "I586CONBT"}
 
 if format:
     while format is True:
@@ -148,8 +153,9 @@ if format:
     print("Continuing in 3 seconds")
     time.sleep(3)
 
-if not sub(["mountpoint", "-q", "/cd"]):
-    hds.mount("/dev/disk/by-label/I586CON", "/cd", "iso9660", what="i586con media")
+if not from_internet:
+    if not sub(["mountpoint", "-q", "/cd"]):
+        hds.mount("/dev/disk/by-label/I586CON", "/cd", "iso9660", what="i586con media")
 
 bt = "/boot/"
 
@@ -174,6 +180,31 @@ else:
         curr_label = setlabel
 
 hds.mount(pdev, bt, curr_type, what="boot partition")
+
+if from_internet:
+    os.chdir('/boot')
+    v = hds.my_version()
+    nv = hds.get_latest_iso_version()
+    if nv['version'] == v:
+        filename = nv['filename']
+        version = nv['version']
+        # No need to ask questions - we're running the latest, fetch latest==us.
+    else:
+        print(f"There is version {nv['version']} available - should we try to install that?")
+        r = input("[yes]/n[o]: ")
+        if "n" in r.strip().lower():
+            filename = None
+            version = v
+        else:
+            filename = nv['filename']
+            version = nv['version']
+
+    fn = hds.fetch_check_iso(filename, version)
+    hds.mount(fn, "/cd", "iso9660", "ro,loop", what="CD image")
+    # The file need not persist longer than the mount
+    # (loop will keep a ref to it for the time we need)
+    hds.unlink(fn)
+    os.chdir('/')
 
 ## perform the main installation
 pd = hds.updinst_prepare("/cd", "/boot", dstfs=curr_type)
