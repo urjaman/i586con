@@ -63,8 +63,8 @@ class EA:
             for y in range(len(disp)):
                 if self.match in disp[y]:
                     return self.reply
-        elif self.line == -1:
-            line = screen.cursor.y
+        elif self.line < 0:
+            line = screen.cursor.y + (self.line+1)
         else:
             line = self.line
         if self.match in disp[line]:
@@ -322,6 +322,14 @@ events_ssh = [
     EA("ssh test complete", '', "su -c poweroff\r"),
     ]
 
+events_install = [
+    EA("bootloader", "Automatic boot in", "\r", to=10, L=19),
+    EA("login prompt", "i586con login:", "root\r", to=100),
+    EA("logged in", 'i586con ~ #', "printf 'n\\n\\n\\n\\n\\nw\\n' | fdisk /dev/sda\r", to=20),
+    EA("fdisk complete", 'Syncing disks.', "printf 'e\\n\\nyes\\n' | hdinstall /dev/sda1 /dev/sda\r", L=-3),
+    EA("install complete", 'Installation complete', "poweroff\r", to=60, L=-2),
+]
+
 class AsciiCaster:
     def __init__(self, filename, width, height, term="linux"):
         import codecs
@@ -378,10 +386,11 @@ def humanlytype(gs, text):
     def writekeys(b, k):
         B = b.encode()
         wo = 0
-        time.sleep(0.05)
+        time.sleep(0.1)
+        streamfeed(gs, 0.0)
         while wo < len(B):
             wo += os.write(gs['mstr'], B[wo:])
-        time.sleep(0.05)
+        time.sleep(0.1)
         streamfeed(gs, 0.0)
         return '', 0
 
@@ -429,6 +438,10 @@ def main():
             c = arg[ci]
             if c == 'S':
                 events = events_ssh
+            elif c == 'I':
+                events = events_install
+            elif c == 'G':
+                events[0] = EA("GRUB", "The highlighted entry will be executed automatically in", "\r", to=20, L=22)
             elif c == 'N':
                 testname = arg[ci+1:]
                 break
@@ -502,7 +515,7 @@ def main():
             if debug_refresh and (now() - drtb) > debug_refresh:
                 drtb = now()
                 print("Debug Refresh:")
-                screenprint(screen)
+                screenprint(screen, gr)
 
     except OSError:
         pass
