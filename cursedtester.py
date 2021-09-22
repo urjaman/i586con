@@ -3,12 +3,15 @@ import os
 import sys
 import pty
 import time
+import json
 from select import select
 import subprocess
 from subprocess import DEVNULL, PIPE, STDOUT
 
 # This you get with pacman -S python-pyte or similar :)
 import pyte
+
+
 
 def now():
     return time.clock_gettime(time.CLOCK_MONOTONIC)
@@ -82,7 +85,7 @@ def html_esc(s):
 def link(tgt, text):
     return f'<a href="{tgt}">{html_esc(text)}</a>'
 
-def htmlfinalize(usedcol, htmls, embeddable=False):
+def htmlfinalize(usedcol, htmls, summary=None, embeddable=False):
     prefix = '<!DOCTYPE html>\n<html><head><meta charset="utf-8"/></head><body>'
     suffix = '</body></html>'
     if embeddable:
@@ -149,10 +152,12 @@ body {
             f"background-color: {colors[0]}"
             ]
     css  = stylecss + "#spacer { height: calc(100vh - 400px) }\n"
-    css += "pre { " + '; '.join(presettings) + "; }\n"
+    css += ".term { " + '; '.join(presettings) + "; }\n"
 
     fullout = ''
     off = 0
+    spacerhtml = '\n<div id="spacer"><br/><br/></div>\n'
+
     for name, html in htmls:
         out = f"<h3 id=\"t{off}\">" + html_esc(name) + "</h3>\n"
         out += html
@@ -175,7 +180,8 @@ body {
             out += ' | '.join(links)
 
         off += 1
-        out += '\n<div id="spacer"><br/><br/></div>\n'
+        if off < len(htmls):
+            out += spacerhtml
         fullout += out
 
     usedcolorcss = []
@@ -185,6 +191,9 @@ body {
                 usedcolorcss.append(cv)
                 break
     style = "<style>" + css + '\n'.join(usedcolorcss) + '\n</style>'
+    if summary:
+        fullout += "<pre>" + html_esc(summary) + "</pre>"
+    fullout += spacerhtml
     return prefix + style + fullout + suffix
 
 def htmlscreen(screen, usedcol = None):
@@ -209,7 +218,7 @@ def htmlscreen(screen, usedcol = None):
     "brightwhite":  'F'
     }
 
-    outhtml = "<pre>"
+    outhtml = '<pre class="term">'
     infmt = False
     for y in range(screen.lines):
         format = ('default', 'default')
@@ -269,17 +278,32 @@ def htmlscreen(screen, usedcol = None):
     outhtml += "</pre>"
     return outhtml
 
-def screenprint(screen, htmlmeta, desc, final=False):
+def summarytxt(gr, totaltime, finalevent):
+    t = [
+        f"=== SUMMARY for {gr['testname']} ===",
+        " total time | wait time | event "
+        ]
+      # " 123456789s | 12345678s | blah "
+    for desc, nt, wt in gr['history']:
+        t.append(f" {nt:9.1f}s | {wt:8.1f}s | {desc}")
+    t.append(f" {totaltime:9.1f}s |           | {finalevent}")
+    return '\n'.join(t) + '\n'
+
+def screenprint(screen, gr=None, desc=None, finalevt=False):
+    nt = now() - gr['basetime']
     disp = screen.display
     for y in range(len(disp)):
         print(f"{y:02d} {disp[y]}")
-    if desc:
-        h = htmlscreen(screen, htmlmeta[0])
-        htmlmeta.append( (desc, h))
-    if final:
-        with open("cursed.html", "w") as f:
-            f.write(htmlfinalize(htmlmeta[0], htmlmeta[1:]))
-
+    if gr and desc:
+        h = htmlscreen(screen, gr['usedcol'])
+        gr['htmls'].append((f"{desc} @ {nt:.1f}s" , h))
+    if finalevt:
+        summary = summarytxt(gr, nt, finalevt)
+        print(summary, end='', flush=True)
+        fn = f"test-{gr['testname']}.html"
+        with open(fn, "w") as f:
+            f.write(htmlfinalize(gr['usedcol'], gr['htmls'], summary))
+        print(f"=== HTML: {fn}")
 
 
 events_simple = [
@@ -298,24 +322,52 @@ events_ssh = [
     EA("ssh test complete", '', "su -c poweroff\r"),
     ]
 
-def streamfeed(mstr, stream, timeout=1.0):
-    size = 0
+class AsciiCaster:
+    def __init__(self, filename, width, height, term="linux"):
+        import codecs
+
+        self.file = open(filename,"w")
+        initial = {
+            'version': 2,
+            'width': width,
+            'height': height,
+            'timestamp': int(time.time()),
+            'env': { 'TERM': term },
+        }
+        j = json.dumps(initial)
+        self.file.write(j + '\n')
+        self.utf8_decoder = codecs.getincrementaldecoder("utf-8")("replace")
+        self.tb = now()
+
+    def close(self):
+        self.file.close()
+        self.file = None
+
+    def cast(self, b):
+        t = now() - self.tb
+        s = self.utf8_decoder.decode(b)
+        event = [ round(t,6), "o", s ]
+        j = json.dumps(event)
+        if self.file:
+            self.file.write(j + '\n')
+
+def streamfeed(gs, timeout=1.0):
     chunk = 1024
     while True:
-        sr = select([mstr], [], [], timeout)
+        sr = select([gs['mstr']], [], [], timeout)
         if sr[0]:
-            d = os.read(mstr, chunk)
+            d = os.read(gs['mstr'], chunk)
             if not d:
                 break
-            size += len(d)
-            stream.feed(d)
+            gs['stream'].feed(d)
+            gs['acast'].cast(d)
             if len(d) >= chunk:
                 continue
         else:
             break
-    return size
+    return
 
-def humanlytype(mstr, stream, text):
+def humanlytype(gs, text):
     # This is "360 wpm" (world record stenotypers according to wiki, so at max "human" :P)
     # That is 360*5 / 60 = 30 chars/sec; bursted at 3 keys every 0.1s
     if 'SSH-KEY' in text:
@@ -326,10 +378,11 @@ def humanlytype(mstr, stream, text):
     def writekeys(b, k):
         B = b.encode()
         wo = 0
+        time.sleep(0.05)
         while wo < len(B):
-            wo += os.write(mstr, B[wo:])
-        time.sleep(0.1)
-        streamfeed(mstr, stream, 0.0)
+            wo += os.write(gs['mstr'], B[wo:])
+        time.sleep(0.05)
+        streamfeed(gs, 0.0)
         return '', 0
 
     b = ''
@@ -338,92 +391,131 @@ def humanlytype(mstr, stream, text):
     while o < len(text):
         # We only use 3-length escape keyed keys (arrows) for now
         if text[o] == "\x1B":
+            if b:
+                b,k = writekeys(b, k)
             b += text[o:o+3]
             o += 3
-        else:
-            b += text[o]
-            o += 1
+            b,k = writekeys(b, k)
+            continue
+        b += text[o]
+        o += 1
         k += 1
         if k >= 3:
             b,k = writekeys(b, k)
     if k:
         writekeys(b, k)
 
-def timeoutcheck(t, timeout, screen, htmlmeta, descr):
+def timeoutcheck(t, timeout, screen, gr, descr):
     n = now() - t
     if n > timeout:
         print(f"{descr} Timeout {timeout}:")
-        screenprint(screen, htmlmeta, "{descr} timeout", final=True)
+        screenprint(screen, gr, "{descr} timeout", finalevt=f"{descr} - timeout")
         sys.exit(1)
 
 
 def main():
     events = events_simple
     argn = 1
-    if sys.argv[argn][0] == '-':
-        if sys.argv[argn][1] == 'S':
-            events = events_ssh
-            bootentry = 0
-            argn = 2
-        else:
-            try:
-                bootentry = int(sys.argv[argn][1:])
-                argn = 2
-            except Exception:
-                bootentry = 0
-    else:
-        bootentry = 0
+    bootentry = 0
+    testname = 'cursed'
+    debug_refresh = None
+
+    for ai in range(1, len(sys.argv)):
+        arg = sys.argv[ai]
+        if arg[0] != '-':
+            argn = ai
+            break
+        for ci in range(1, len(arg)):
+            c = arg[ci]
+            if c == 'S':
+                events = events_ssh
+            elif c == 'N':
+                testname = arg[ci+1:]
+                break
+            elif c == 'R':
+                debug_refresh = float(arg[ci+1:])
+                break
+            elif c.isnumeric():
+                bootentry = int(c)
+            else:
+                print("Umm... ?")
+                sys.exit(1)
+        argn = ai + 1
+
     screen = pyte.Screen(80,25)
     stream = pyte.ByteStream(screen)
-    mstr = boxit(sys.argv[argn:])
-    t = now()
+    mstr = boxit(sys.argv[argn:], screen.lines, screen.columns)
+    caster = AsciiCaster(f"test-{testname}.cast", screen.columns, screen.lines)
+
+    t = basetime = now()
     if bootentry:
+        print(f"Bootentry: {bootentry}")
         events[0].reply = ("\x1b\x5b\x42" * bootentry) + '\r'
 
-    counter = 0
-    eventi = 0
-    htmlmeta = [[]]
+    # Globals for Report-generation
+    gr = {
+        'testname': testname,
+        'basetime': basetime,
+        'usedcol': [],
+        'htmls': [],
+        'history': []
+    }
+
+    # globals for stream(feed)
+    gs = {
+        'stream': stream,
+        'mstr': mstr,
+        'acast': caster,
+    }
+
+    ei = 0
+    drtb = t # debug refresh time base
+    to = 0.0
     try:
         while True:
             try:
-                counter += streamfeed(mstr, stream)
+                streamfeed(gs)
             except KeyboardInterrupt:
                 break
-            if eventi < len(events):
-                to = events[eventi].timeout
-                r = events[eventi].check_and_respond(screen)
+            if ei < len(events):
+                e = events[ei]
+                to = e.timeout
+                r = e.check_and_respond(screen)
                 if r:
-                    print(f"Event {eventi} Tripped {now() - t:.3f}/{to}:")
-                    screenprint(screen, htmlmeta, events[eventi].desc)
+                    tt = now() - t
+                    nt = now() - basetime
+                    gr['history'].append((e.desc, nt, tt))
+                    print(f"Event {e.desc} {tt:.3f}/{to}:")
+                    screenprint(screen, gr, e.desc)
                     if isinstance(r, list):
                         subc(r)
                     else:
-                        humanlytype(mstr,stream, r)
-                    eventi += 1
-                    counter = 0
-                    t = now()
+                        humanlytype(gs, r)
+                    ei += 1
+                    drtb = t = now()
                     continue
-                timeoutcheck(t, to, screen, htmlmeta, events[eventi].desc)
+                timeoutcheck(t, to, screen, gr, e.desc)
             else:
                 to = 80.0
-                timeoutcheck(t, to, screen, htmlmeta, "Shutdown")
+                timeoutcheck(t, to, screen, gr, "Shutdown")
 
-            if counter >= 10:
-                #print("Screen:")
-                #screenprint(screen)
-                counter = 0
+            if debug_refresh and (now() - drtb) > debug_refresh:
+                drtb = now()
+                print("Debug Refresh:")
+                screenprint(screen)
+
     except OSError:
         pass
 
     os.close(mstr)
-    print(f"Final Screen {now() - t:.3f}/{to}:")
-    desc = "Final"
-    if eventi < len(events):
-        desc += " (Early Shutdown)"
-    screenprint(screen, htmlmeta, desc, final=True)
+    caster.close()
+    desc = "Shutdown"
+    if ei < len(events):
+        desc += " (Early)"
+    print(f"{desc} {now() - t:.3f}/{to}:")
+    screenprint(screen, gr, desc, finalevt=desc)
 
-    if eventi < len(events):
-        print("Premature Shutdown.")
+    if ei < len(events):
         sys.exit(1)
 
 main()
