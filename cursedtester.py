@@ -376,43 +376,33 @@ def streamfeed(gs, timeout=1.0):
     return
 
 def humanlytype(gs, text):
-    # This is "360 wpm" (world record stenotypers according to wiki, so at max "human" :P)
-    # That is 360*5 / 60 = 30 chars/sec; bursted at 3 keys every 0.1s
     if 'SSH-KEY' in text:
         with open(os.environ['HOME'] + '/.ssh/id_rsa.pub') as kf:
             k = kf.read().strip()
         text = text.replace('SSH-KEY', k)
 
-    def writekeys(b, k):
+    def writekeys(b):
         B = b.encode()
         wo = 0
-        time.sleep(0.1)
+        time.sleep(0.025)
         streamfeed(gs, 0.0)
         while wo < len(B):
             wo += os.write(gs['mstr'], B[wo:])
-        time.sleep(0.1)
+        time.sleep(0.05)
         streamfeed(gs, 0.0)
-        return '', 0
+        return
 
-    b = ''
-    k = 0
     o = 0
     while o < len(text):
         # We only use 3-length escape keyed keys (arrows) for now
         if text[o] == "\x1B":
-            if b:
-                b,k = writekeys(b, k)
-            b += text[o:o+3]
+            b = text[o:o+3]
             o += 3
-            b,k = writekeys(b, k)
+            writekeys(b)
             continue
-        b += text[o]
+        b = text[o]
         o += 1
-        k += 1
-        if k >= 3:
-            b,k = writekeys(b, k)
-    if k:
-        writekeys(b, k)
+        writekeys(b)
 
 def timeoutcheck(t, timeout, screen, gr, descr):
     n = now() - t
