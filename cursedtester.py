@@ -45,32 +45,6 @@ def boxit(argv, rows=25, cols=80):
     setwinsz(master, rows, cols)
     return master
 
-# Event->Action (Match-Reply?)
-# Anyways, this describes how the tester does things
-
-class EA:
-    def __init__(self, descr, match, reply, to=30.0, L=-1):
-        self.desc = descr
-        self.match = match
-        self.reply = reply
-        self.line = L
-        self.timeout = to
-
-    def check_and_respond(self, screen):
-        disp = screen.display
-        # None = full screen scan, default/-1 = cursor line, other = specific line
-        if self.line is None:
-            for y in range(len(disp)):
-                if self.match in disp[y]:
-                    return self.reply
-        elif self.line < 0:
-            line = screen.cursor.y + (self.line+1)
-        else:
-            line = self.line
-        if self.match in disp[line]:
-            return self.reply
-        return None
-
 
 def html_esc(s):
     escapes = {
@@ -151,12 +125,12 @@ body {
             f"color: {colors[7]}",
             f"background-color: {colors[0]}"
             ]
-    css  = stylecss + "#spacer { height: calc(100vh - 400px) }\n"
+    css  = stylecss + ".spacer { height: calc(100vh - 400px) }\n"
     css += ".term { " + '; '.join(presettings) + "; }\n"
 
     fullout = ''
     off = 0
-    spacerhtml = '\n<div id="spacer"><br/><br/></div>\n'
+    spacerhtml = '\n<div class="spacer"><p><p></div>\n'
 
     for name, html in htmls:
         out = f"<h3 id=\"t{off}\">" + html_esc(name) + "</h3>\n"
@@ -305,31 +279,6 @@ def screenprint(screen, gr=None, desc=None, finalevt=False):
             f.write(htmlfinalize(gr['usedcol'], gr['htmls'], summary))
         print(f"=== HTML: {fn}")
 
-
-events_simple = [
-    EA("bootloader", "Automatic boot in", "\r", to=10, L=19),
-    EA("login prompt", "i586con login:", "root\r", to=100),
-    EA("logged in", 'i586con ~ #', "poweroff\r", to=20),
-    ]
-
-events_ssh = [
-    EA("bootloader", "Automatic boot in", "\r", to=10, L=19),
-    EA("login prompt", "i586con login:", "user\r", to=100),
-    EA("logged in", 'user@i586con ~ $',
-        "mkdir -p .ssh\recho 'SSH-KEY' > .ssh/authorized_keys\rcd .ssh\r", to=20),
-    EA("ssh key entered", 'user@i586con ~/.ssh $', "while ! pidof sshd; do sleep 1; done; sleep 5; cd /\r", to=10),
-    EA("sshd started", 'user@i586con / $', ["ssh", "qemu-i586con", "exit"], to=400),
-    EA("ssh test complete", '', "su -c poweroff\r"),
-    ]
-
-events_install = [
-    EA("bootloader", "Automatic boot in", "\r", to=10, L=19),
-    EA("login prompt", "i586con login:", "root\r", to=100),
-    EA("logged in", 'i586con ~ #', "printf 'n\\n\\n\\n\\n\\nw\\n' | fdisk /dev/sda\r", to=20),
-    EA("fdisk complete", 'Syncing disks.', "printf 'e\\n\\nyes\\n' | hdinstall /dev/sda1 /dev/sda\r", L=-3),
-    EA("install complete", 'Installation complete', "poweroff\r", to=60, L=-2),
-]
-
 class AsciiCaster:
     def __init__(self, filename, width, height, term="linux"):
         import codecs
@@ -398,11 +347,11 @@ def humanlytype(gs, text):
         if text[o] == "\x1B":
             b = text[o:o+3]
             o += 3
-            writekeys(b)
-            continue
-        b = text[o]
-        o += 1
+        else:
+            b = text[o]
+            o += 1
         writekeys(b)
+
 
 def timeoutcheck(t, timeout, screen, gr, descr):
     n = now() - t
@@ -412,113 +361,183 @@ def timeoutcheck(t, timeout, screen, gr, descr):
         sys.exit(1)
 
 
-def main():
-    events = events_simple
-    argn = 1
-    bootentry = 0
-    testname = 'cursed'
-    debug_refresh = None
+# Event->Action (Match-Reply?)
+# Anyways, this describes how the tester does things
 
-    for ai in range(1, len(sys.argv)):
-        arg = sys.argv[ai]
-        if arg[0] != '-':
-            argn = ai
-            break
-        for ci in range(1, len(arg)):
-            c = arg[ci]
-            if c == 'S':
-                events = events_ssh
-            elif c == 'I':
-                events = events_install
-            elif c == 'G':
-                events[0] = EA("GRUB", "The highlighted entry will be executed automatically in", "\r", to=20, L=22)
-            elif c == 'N':
-                testname = arg[ci+1:]
-                break
-            elif c == 'R':
-                debug_refresh = float(arg[ci+1:])
-                break
-            elif c.isnumeric():
-                bootentry = int(c)
-            else:
-                print("Umm... ?")
-                sys.exit(1)
-        argn = ai + 1
+class EA:
+    def __init__(self, descr, match, reply, to=30.0, L=-1):
+        self.desc = descr
+        self.match = match
+        self.reply = reply
+        self.line = L
+        self.timeout = to
 
-    screen = pyte.Screen(80,25)
-    stream = pyte.ByteStream(screen)
-    mstr = boxit(sys.argv[argn:], screen.lines, screen.columns)
-    caster = AsciiCaster(f"test-{testname}.cast", screen.columns, screen.lines)
+    def check_and_respond(self, screen):
+        disp = screen.display
+        # None = full screen scan, default/-1 = cursor line, other = specific line
+        if self.line is None:
+            for y in range(len(disp)):
+                if self.match in disp[y]:
+                    return self.reply
+        elif self.line < 0:
+            line = screen.cursor.y + (self.line+1)
+        else:
+            line = self.line
+        if self.match in disp[line]:
+            return self.reply
+        return None
 
-    t = basetime = now()
-    if bootentry:
-        print(f"Bootentry: {bootentry}")
-        events[0].reply = ("\x1b\x5b\x42" * bootentry) + '\r'
+class QemuRun:
+    def __init__(self, testname, events, bootentry=0, ram=60, net=None, cdrom=None, hda=None, usb=None, grub=False):
+        self.name = testname
+        n = []
+        if not net:
+            n = [ "-nic", "none" ]
+        elif isinstance(net, list):
+            forwards = ""
+            for hostport, guestport in net:
+                forwards += f",hostfwd=tcp::{hostport}-:{guestport}"
+            if forwards:
+                n = [ "-device", "e1000,netdev=net0" ]
+                n += [ "-netdev", "user,id=net0" + forwards ]
+        da = []
+        if cdrom:
+            da += [ "-cdrom", cdrom ]
+        if hda:
+            da += [ "-hda", hda ]
+        if usb:
+            da += [ "-drive", "if=none,id=stick,format=raw,file="+usb, "-usb", "-device", "usb-storage,drive=stick" ]
+        if grub:
+            events[0] = EA("GRUB", "The highlighted entry will be executed automatically in", "\r", to=20, L=22)
+        if bootentry:
+            events[0].reply = ("\x1b\x5b\x42" * bootentry) + '\r'
+        self.events = events
+        self.qemuargs = [  "qemu-system-i386", "-curses", "-m", str(ram) ] + da + n
 
-    # Globals for Report-generation
-    gr = {
-        'testname': testname,
-        'basetime': basetime,
-        'usedcol': [],
-        'htmls': [],
-        'history': []
-    }
+    def exec(self):
+        testname = self.name
+        events = self.events
 
-    # globals for stream(feed)
-    gs = {
-        'stream': stream,
-        'mstr': mstr,
-        'acast': caster,
-    }
+        screen = pyte.Screen(80,25)
+        stream = pyte.ByteStream(screen)
+        mstr = boxit(self.qemuargs, screen.lines, screen.columns)
+        caster = AsciiCaster(f"test-{testname}.cast", screen.columns, screen.lines)
 
-    ei = 0
-    drtb = t # debug refresh time base
-    to = 0.0
-    try:
-        while True:
-            try:
-                streamfeed(gs)
-            except KeyboardInterrupt:
-                break
-            if ei < len(events):
-                e = events[ei]
-                to = e.timeout
-                r = e.check_and_respond(screen)
-                if r:
-                    tt = now() - t
-                    nt = now() - basetime
-                    gr['history'].append((e.desc, nt, tt))
-                    print(f"Event {e.desc} {tt:.3f}/{to}:")
-                    screenprint(screen, gr, e.desc)
-                    if isinstance(r, list):
-                        subc(r)
-                    else:
-                        humanlytype(gs, r)
-                    ei += 1
-                    drtb = t = now()
-                    continue
-                timeoutcheck(t, to, screen, gr, e.desc)
-            else:
-                to = 80.0
-                timeoutcheck(t, to, screen, gr, "Shutdown")
+        t = basetime = now()
 
-            if debug_refresh and (now() - drtb) > debug_refresh:
-                drtb = now()
-                print("Debug Refresh:")
-                screenprint(screen, gr)
+        # Globals for Report-generation
+        gr = {
+            'testname': testname,
+            'basetime': basetime,
+            'usedcol': [],
+            'htmls': [],
+            'history': []
+        }
 
-    except OSError:
-        pass
+        # globals for stream(feed)
+        gs = {
+            'stream': stream,
+            'mstr': mstr,
+            'acast': caster,
+        }
 
-    os.close(mstr)
-    caster.close()
-    desc = "Shutdown"
-    if ei < len(events):
-        desc += " (Early)"
-    print(f"{desc} {now() - t:.3f}/{to}:")
-    screenprint(screen, gr, desc, finalevt=desc)
+        ei = 0
+        to = 0.0
+        try:
+            while True:
+                try:
+                    streamfeed(gs)
+                except KeyboardInterrupt:
+                    break
+                if ei < len(events):
+                    e = events[ei]
+                    to = e.timeout
+                    r = e.check_and_respond(screen)
+                    if r:
+                        tt = now() - t
+                        nt = now() - basetime
+                        gr['history'].append((e.desc, nt, tt))
+                        print(f"Event {e.desc} {tt:.3f}/{to}:")
+                        screenprint(screen, gr, e.desc)
+                        if isinstance(r, list):
+                            subc(r)
+                        else:
+                            humanlytype(gs, r)
+                        ei += 1
+                        t = now()
+                        continue
+                    timeoutcheck(t, to, screen, gr, e.desc)
+                else:
+                    to = 80.0
+                    timeoutcheck(t, to, screen, gr, "Shutdown")
 
-    if ei < len(events):
-        sys.exit(1)
+        except OSError:
+            pass
+
+        os.close(mstr)
+        caster.close()
+        desc = "Shutdown"
+        if ei < len(events):
+            desc += " (Early!)"
+        print(f"{desc} {now() - t:.3f}/{to}:")
+        screenprint(screen, gr, desc, finalevt=desc)
+
+        if ei < len(events):
+            sys.exit(1)
+        # TBD: Move from exit(1) to getting a proper return value returned?
+        return
+
+
+
+class Run:
+    def __init__(self, *args, **kwargs):
+        self.name = None
+        self.arglist = args
+        self.kwargs = kwargs
+
+    def exec(self):
+        subc(*self.arglist, **self.kwargs)
+
+
+def boot_EA(login):
+    return [ EA("bootloader", "Automatic boot in", "\r", to=10, L=19) +
+             EA("login prompt", "i586con login:", login + "\r", to=100) ]
+
+events_boot = boot_EA("root") + [
+    EA("logged in", 'i586con ~ #', "poweroff\r", to=20),
+    ]
+
+events_ssh = boot_EA("user") + [
+    EA("logged in", 'user@i586con ~ $',
+        "mkdir -p .ssh\recho 'SSH-KEY' > .ssh/authorized_keys\rcd .ssh\r", to=20),
+    EA("ssh key entered", 'user@i586con ~/.ssh $', "while ! pidof sshd; do sleep 1; done; sleep 5; cd /\r", to=10),
+    EA("sshd started", 'user@i586con / $', ["ssh", "qemu-i586con", "exit"], to=400),
+    EA("ssh test complete", '', "su -c poweroff\r"),
+    ]
+
+def events_install(fs="ext"):
+    return = boot_EA("root") + [
+        EA("logged in", 'i586con ~ #', "printf 'n\\n\\n\\n\\n\\nw\\n' | fdisk /dev/sda\r", to=20),
+        EA("fdisk complete", 'Syncing disks.', f"printf '{fs}\\n\\nyes\\n' | hdinstall /dev/sda1 /dev/sda\r", L=-3),
+        EA("install complete", 'Installation complete', "poweroff\r", to=240, L=-2),
+    ]
+
+
+[isofile] = sys.argv[1:]
+isofile = os.path.realpath(isofile)
+hdname = "cursed.qcow"
+testsuite = [
+    QemuRun("network-ssh", events_ssh, net=[(1586,22)], cdrom=isofile),
+    QemuRun("lowram-usb", events_boot, bootentry=2, ram=16, usb=isofile),
+    Run(["qemu-img", "create", "-f", "qcow2", hdname, "1G"]),
+    QemuRun("install-b2r-ext", events_install(), bootentry=4, ram=48, cdrom=isofile, hda=hdname),
+    QemuRun("hdboot-ext-cdl", events_boot, bootentry=1, grub=True, hda=hdname),
+    Run(["rm", "-f", hdname ])
+    Run(["qemu-img", "create", "-f", "qcow2", hdname, "400M"]),
+    QemuRun("install-cd-fat", events_install("fat"), bootentry=2, cdrom=isofile, hda=hdname),
+    QemuRun("hdboot-fat", events_boot, grub=True, hda=hdname),
+    QemuRun("hdboot-fat-b2r", events_boot, bootentry=2, grub=True, hda=hdname),
+    Run(["rm", "-f", hdname ])
+]
 
 main()
