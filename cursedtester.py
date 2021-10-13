@@ -523,21 +523,25 @@ def events_install(fs="ext"):
     ]
 
 
-[isofile] = sys.argv[1:]
-isofile = os.path.realpath(isofile)
-hdname = "cursed.qcow"
-testsuite = [
-    QemuRun("network-ssh", events_ssh, net=[(1586,22)], cdrom=isofile),
-    QemuRun("lowram-usb", events_boot, bootentry=2, ram=16, usb=isofile),
-    Run(["qemu-img", "create", "-f", "qcow2", hdname, "1G"]),
-    QemuRun("install-b2r-ext", events_install(), bootentry=4, ram=48, cdrom=isofile, hda=hdname),
-    QemuRun("hdboot-ext-cdl", events_boot, bootentry=1, grub=True, hda=hdname),
-    Run(["rm", "-f", hdname ])
-    Run(["qemu-img", "create", "-f", "qcow2", hdname, "400M"]),
-    QemuRun("install-cd-fat", events_install("fat"), bootentry=2, cdrom=isofile, hda=hdname),
-    QemuRun("hdboot-fat", events_boot, grub=True, hda=hdname),
-    QemuRun("hdboot-fat-b2r", events_boot, bootentry=2, grub=True, hda=hdname),
-    Run(["rm", "-f", hdname ])
-]
+def run_testsuite():
+    [isofile] = sys.argv[1:]
+    isofile = os.path.realpath(isofile)
+    hdname = "cursed.qcow"
+    testsuite = [
+        QemuRun("network-ssh", events_ssh, net=[(1586,22)], cdrom=isofile),
+        QemuRun("lowram-usb", events_boot, bootentry=2, ram=16, usb=isofile),
+        Run(["qemu-img", "create", "-f", "qcow2", hdname, "1G"]),
+        QemuRun("install-b2r-ext", events_install(), bootentry=4, ram=48, cdrom=isofile, hda=hdname),
+        QemuRun("hdboot-ext-cdl", events_boot, bootentry=1, grub=True, hda=hdname),
+        Run(["rm", "-f", hdname ])
+        Run(["qemu-img", "create", "-f", "qcow2", hdname, "400M"]),
+        QemuRun("install-cd-fat", events_install("fat"), bootentry=2, cdrom=isofile, hda=hdname),
+        QemuRun("hdboot-fat", events_boot, grub=True, hda=hdname),
+        QemuRun("hdboot-fat-b2r", events_boot, bootentry=2, grub=True, hda=hdname),
+        Run(["rm", "-f", hdname ])
+    ]
+    for evt in testsuite:
+        evt.exec()
 
-main()
+
+run_testsuite()

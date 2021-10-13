@@ -4,12 +4,15 @@ import os
 import sys
 import stat
 import subprocess
+import tempfile
 
-[device] = sys.argv[1:]
+if len(sys.argv) < 2 or len(sys.argv) > 3 or sys.argv[1][0] == '-':
+    sys.exit(f"usage: {sys.argv[0]} <device> [grubroot]")
 
+device = os.path.abspath(sys.argv[1])
+grubroot = '/usr' if len(sys.argv) < 3 else sys.argv[2]
+grubroot = os.path.abspath(grubroot)
 scriptname = os.path.abspath(__file__)
-
-os.chdir("/tmp")
 
 # run-check
 def rc(*args, **kwargs):
@@ -19,7 +22,8 @@ def rc(*args, **kwargs):
         print(f"Return: {r.returncode}")
         sys.exit(1)
 
-rc(["modprobe", "floppy"])
+if device.startswith("/dev/fd"):
+    rc(["modprobe", "floppy"])
 
 grub_filesystems = [ "fat", "iso9660", "ext2", "ntfs" ]
 
@@ -110,79 +114,90 @@ menuentry "Try next BIOS boot device (exit grub)" {
 }
 """
 
-with open("grubtmp.cfg", "w") as f:
-    f.write(grubcfg[1:])
+with tempfile.TemporaryDirectory(dir="/tmp") as tmpdir:
+    os.chdir(tmpdir)
 
-grubout = "grubtmp.img"
+    with open("grubtmp.cfg", "w") as f:
+        f.write(grubcfg[1:])
 
-rc(["cp","-a","/usr/lib/grub/i386-pc","./grubmods"])
+    grubout = "grubtmp.img"
 
-with open("grubmods/fs.lst", "w") as f:
-    f.write('\n'.join(grub_filesystems + ['tar']) + '\n')
+    rc(["cp","-a",grubroot + "/lib/grub/i386-pc","./grubmods"])
 
-standalone_cmd = [
-    "grub-mkstandalone",
-    "-d", "/tmp/grubmods",
-    "--themes=",
-    "--fonts=",
-    "--locales=",
-    "--compress=xz",
-    "--modules=xzio",
-    "--install-modules=" + ' '.join(grub_mods),
-    "--format=i386-pc",
-    "-o", grubout,
-    "/boot/grub/grub.cfg=./grubtmp.cfg"
-]
+    with open("grubmods/fs.lst", "w") as f:
+        f.write('\n'.join(grub_filesystems + ['tar']) + '\n')
 
-
-rc(standalone_cmd)
-grubsz = os.stat(grubout)[stat.ST_SIZE]
-(sectors, rem) = divmod(grubsz, 512)
-sectors += 2 if rem else 1
-
-rc(["mkdosfs", "-n", "RAMGRUB2", "-R", str(sectors), "-r", "112", "-F", "12", device])
-
-grub_bootsect_file = "/usr/lib/grub/i386-pc/boot.img"
-
-with open(grub_bootsect_file, "rb") as f:
-    grubboot = f.read()
-    if len(grubboot) != 512:
-        print(f"Wrong length grub boot sector in {grub_bootsect_file}?!?")
-        sys.exit(1)
-
-with open(device, "rb") as f:
-    fatstart = f.read(512)
+    standalone_cmd = [
+        grubroot + "/bin/grub-mkstandalone",
+        "-d", tmpdir + "/grubmods",
+        "--themes=",
+        "--fonts=",
+        "--locales=",
+        "--compress=xz",
+        "--modules=xzio",
+        "--install-modules=" + ' '.join(grub_mods),
+        "--format=i386-pc",
+        "-o", grubout,
+        "/boot/grub/grub.cfg=./grubtmp.cfg"
+    ]
 
 
-# We're sorta re-doing parts of what grub setup.c does; but I don't
-# know of a way to have grub do what we're doing - also we're doing
-# very little of what they're doing, so ...
-# Anyways, mesh bytes from the 3 sources onto the floppy...
+    rc(standalone_cmd)
+    grubsz = os.stat(grubout)[stat.ST_SIZE]
+    (sectors, rem) = divmod(grubsz, 512)
+    sectors += 2 if rem else 1
 
-bootsect = grubboot[0:3] + fatstart[3:0x5A] + grubboot[0x5A:]
+    rc(["mkdosfs", "-n", "RAMGRUB2", "-R", str(sectors), "-r", "112", "-F", "12", device])
 
-with open(grubout, "rb") as img:
-    grub = img.read()
+    grub_bootsect_file = grubroot + "/lib/grub/i386-pc/boot.img"
 
-with open(device, "wb") as dev:
-    dev.write(bootsect)
-    dev.write(grub)
+    with open(grub_bootsect_file, "rb") as f:
+        grubboot = f.read()
+        if len(grubboot) != 512:
+            print(f"Wrong length grub boot sector in {grub_bootsect_file}?!?")
+            sys.exit(1)
 
-os.sync()
+    with open(device, "rb") as f:
+        fatstart = f.read(512)
 
-# Finally, mount the FAT and include a little notice for people
-rc(["mount", "-t", "vfat", device, "/mnt"])
-message = ("The grub memdisk image is hidden in the reserved sectors of this FAT12 filesystem.\n"
-           "Thus editing it without recreating the filesystem is difficult (to put it mildly).\n"
-           "You can however use the rest of the space on this filesystem and include whatever (small)\n"
-           "files that you desire.\n\n"
-           "The python script that was used to generate this floppy is included for easier recreation.\n")
 
-with open("/mnt/README.TXT", 'w') as f:
-    f.write(message)
+    # We're sorta re-doing parts of what grub setup.c does; but I don't
+    # know of a way to have grub do what we're doing - also we're doing
+    # very little of what they're doing, so ...
+    # Anyways, mesh bytes from the 3 sources onto the floppy...
 
-rc(["cp",scriptname,"/mnt"])
+    bootsect = grubboot[0:3] + fatstart[3:0x5A] + grubboot[0x5A:]
 
-rc(["umount", "/mnt"])
-os.sync()
-print("Floppy creation complete.")
+    with open(grubout, "rb") as img:
+        grub = img.read()
+
+    with open(device, "r+b") as dev:
+        dev.write(bootsect)
+        dev.write(grub)
+
+    os.sync()
+
+    # Finally, put a couple of files on the FAT12 :)
+
+    message = ("The grub memdisk image is hidden in the reserved sectors of this FAT12 filesystem.\n"
+               "Thus editing it without recreating the filesystem is difficult (to put it mildly).\n"
+               "You can however use the rest of the space on this filesystem and include whatever (small)\n"
+               "files that you desire.\n\n"
+               "The python script that was used to generate this floppy is included for easier recreation.\n")
+
+    with open("./README.TXT", 'w') as f:
+        f.write(message)
+
+    mtools = os.path.exists("/usr/bin/mcopy")
+
+    if not mtools:
+        rc(["mount", "-t", "vfat", device, "/mnt"])
+        rc(["cp", "./README.TXT", "/mnt"])
+        rc(["cp",scriptname,"/mnt"])
+        rc(["umount", "/mnt"])
+    else:
+        rc(["mcopy", "-i", device, './README.TXT', '::'])
+        rc(["mcopy", "-i", device, scriptname, '::'])
+
+    os.sync()
+    print("Floppy creation complete.")
