@@ -22,4 +22,6 @@ patch -Np1 < ../patches4br/0001-package-links-graphics-mode-does-not-depend-on-D
 patch -Np1 < ../patches4br/slimmer-libopenssl.patch
 patch -Np1 < ../patches4br/allow-fuse-module.patch
 patch -Np1 < ../patches4br/links-force-no-libevent.patch
+patch -Np1 < ../patches4br/grub2-hostfixes.patch
+patch -Np1 < ../patches4br/syslinux-as-objcopy.patch
 touch ../.fextract-ok-$BR_V
