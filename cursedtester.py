@@ -326,7 +326,15 @@ def streamfeed(gs, timeout=1.0):
 
 def humanlytype(gs, text):
     if 'SSH-KEY' in text:
-        with open(os.environ['HOME'] + '/.ssh/id_rsa.pub') as kf:
+        p = os.environ['HOME'] + '/.ssh/'
+        pk = None
+        for k in [ 'id_ed25519.pub', 'id_rsa.pub' ]:
+            if os.path.exists(p + k):
+                pk = p + k
+                break
+        if pk is None:
+            sys.exit("You need to have an SSH public key in ~/.ssh/")
+        with open(pk) as kf:
             k = kf.read().strip()
         text = text.replace('SSH-KEY', k)
 
@@ -388,8 +396,9 @@ class EA:
         return None
 
 class QemuRun:
-    def __init__(self, testname, events, bootentry=0, ram=60, net=None, cdrom=None, hda=None, usb=None, grub=False):
+    def __init__(self, testname, events_, bootentry=0, ram=60, net=None, cdrom=None, hda=None, usb=None, grub=False):
         self.name = testname
+        events = events_[:]
         n = []
         if not net:
             n = [ "-nic", "none" ]
@@ -500,23 +509,24 @@ class Run:
 
 
 def boot_EA(login):
-    return [ EA("bootloader", "Automatic boot in", "\r", to=10, L=19) +
+    return [ EA("bootloader", "Automatic boot in", "\r", to=10, L=19),
              EA("login prompt", "i586con login:", login + "\r", to=100) ]
 
 events_boot = boot_EA("root") + [
     EA("logged in", 'i586con ~ #', "poweroff\r", to=20),
     ]
 
+ssh_cfg = os.path.realpath("qemu-ssh-cfg")
 events_ssh = boot_EA("user") + [
     EA("logged in", 'user@i586con ~ $',
         "mkdir -p .ssh\recho 'SSH-KEY' > .ssh/authorized_keys\rcd .ssh\r", to=20),
     EA("ssh key entered", 'user@i586con ~/.ssh $', "while ! pidof sshd; do sleep 1; done; sleep 5; cd /\r", to=10),
-    EA("sshd started", 'user@i586con / $', ["ssh", "qemu-i586con", "exit"], to=400),
+    EA("sshd started", 'user@i586con / $', ["ssh", "-F", ssh_cfg, "qemu-i586con", "exit"], to=400),
     EA("ssh test complete", '', "su -c poweroff\r"),
     ]
 
 def events_install(fs="ext"):
-    return = boot_EA("root") + [
+    return boot_EA("root") + [
         EA("logged in", 'i586con ~ #', "printf 'n\\n\\n\\n\\n\\nw\\n' | fdisk /dev/sda\r", to=20),
         EA("fdisk complete", 'Syncing disks.', f"printf '{fs}\\n\\nyes\\n' | hdinstall /dev/sda1 /dev/sda\r", L=-3),
         EA("install complete", 'Installation complete', "poweroff\r", to=240, L=-2),
@@ -528,12 +538,12 @@ def run_testsuite():
     isofile = os.path.realpath(isofile)
     hdname = "cursed.qcow"
     testsuite = [
-        QemuRun("network-ssh", events_ssh, net=[(1586,22)], cdrom=isofile),
         QemuRun("lowram-usb", events_boot, bootentry=2, ram=16, usb=isofile),
+        QemuRun("network-ssh", events_ssh, net=[(1586,22)], cdrom=isofile),
         Run(["qemu-img", "create", "-f", "qcow2", hdname, "1G"]),
         QemuRun("install-b2r-ext", events_install(), bootentry=4, ram=48, cdrom=isofile, hda=hdname),
         QemuRun("hdboot-ext-cdl", events_boot, bootentry=1, grub=True, hda=hdname),
-        Run(["rm", "-f", hdname ])
+        Run(["rm", "-f", hdname ]),
         Run(["qemu-img", "create", "-f", "qcow2", hdname, "400M"]),
         QemuRun("install-cd-fat", events_install("fat"), bootentry=2, cdrom=isofile, hda=hdname),
         QemuRun("hdboot-fat", events_boot, grub=True, hda=hdname),

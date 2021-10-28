@@ -1,0 +1,7 @@
+Host qemu-i586con
+	Hostname 127.0.0.1
+	Port 1586
+	User user
+	StrictHostKeyChecking no
+	UserKnownHostsFile /dev/null
+
