@@ -2,9 +2,8 @@
 cd "$1"
 mkdir -p isofs.tmp/{isolinux,boot,img}
 cp syslinux/* isofs.tmp/isolinux/
-cp $HOST_DIR/share/syslinux/ldlinux.c32 isofs.tmp/isolinux/
-cp $HOST_DIR/share/syslinux/libutil.c32 isofs.tmp/isolinux/
-cp $HOST_DIR/share/syslinux/menu.c32 isofs.tmp/isolinux/
+cp $HOST_DIR/share/syslinux/{ldlinux,libutil,menu,poweroff,chain}.c32 isofs.tmp/isolinux/
+cp $HOST_DIR/share/syslinux/memdisk isofs.tmp/isolinux/
 cp $BR2_EXTERNAL_I586CON_PATH/board/isolinux.cfg isofs.tmp/isolinux/isolinux.cfg
 cp bzImage isofs.tmp/boot/
 cpio -i busybox < rootfs.cpio
@@ -45,6 +44,9 @@ find fsmod | cpio -o -H newc | gzip > isofs.tmp/rdparts/vfat.cpio.gz
 cat ro.cpio rootfs.cpio.gz > isofs.tmp/img/rootfs.img
 stat --printf="%s" ro.cpio > isofs.tmp/img/ro-size
 cp rootfs.tar.gz isofs.tmp/img/save.tgz
+
+dd if=/dev/zero of=isofs.tmp/boot/grubflop.bin bs=1k count=1440
+$HOST_DIR/bin/python3 $BR2_EXTERNAL_I586CON_PATH/board/rootfs-overlay/root/make-grub-floppy.py isofs.tmp/boot/grubflop.bin $HOST_DIR/bin ../target/usr/lib/grub/i386-pc
 
 if [ -d "$BR2_EXTERNAL_I586CON_PATH/../mp3" ]; then
 	cp -a "$BR2_EXTERNAL_I586CON_PATH/../mp3" isofs.tmp/
