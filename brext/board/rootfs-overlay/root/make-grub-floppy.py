@@ -6,12 +6,16 @@ import stat
 import subprocess
 import tempfile
 
-if len(sys.argv) < 2 or len(sys.argv) > 3 or sys.argv[1][0] == '-':
-    sys.exit(f"usage: {sys.argv[0]} <device> [grubroot]")
+if len(sys.argv) < 2 or len(sys.argv) > 4 or sys.argv[1][0] == '-':
+    sys.exit(f"usage: {sys.argv[0]} <device> [grubutils] [grubmods]")
 
 device = os.path.abspath(sys.argv[1])
-grubroot = '/usr' if len(sys.argv) < 3 else sys.argv[2]
-grubroot = os.path.abspath(grubroot)
+grubutils = '/usr/bin' if len(sys.argv) < 3 else sys.argv[2]
+grubutils = os.path.abspath(grubutils)
+
+grubmods = '/usr/lib/grub/i386-pc' if len(sys.argv) < 4 else sys.argv[3]
+grubmods = os.path.abspath(grubmods)
+
 scriptname = os.path.abspath(__file__)
 
 # run-check
@@ -122,13 +126,13 @@ with tempfile.TemporaryDirectory(dir="/tmp") as tmpdir:
 
     grubout = "grubtmp.img"
 
-    rc(["cp","-a",grubroot + "/lib/grub/i386-pc","./grubmods"])
+    rc(["cp","-a",grubmods,"./grubmods"])
 
     with open("grubmods/fs.lst", "w") as f:
         f.write('\n'.join(grub_filesystems + ['tar']) + '\n')
 
     standalone_cmd = [
-        grubroot + "/bin/grub-mkstandalone",
+        grubutils + "/grub-mkstandalone",
         "-d", tmpdir + "/grubmods",
         "--themes=",
         "--fonts=",
@@ -149,7 +153,7 @@ with tempfile.TemporaryDirectory(dir="/tmp") as tmpdir:
 
     rc(["mkdosfs", "-n", "RAMGRUB2", "-R", str(sectors), "-r", "112", "-F", "12", device])
 
-    grub_bootsect_file = grubroot + "/lib/grub/i386-pc/boot.img"
+    grub_bootsect_file = grubmods + "/boot.img"
 
     with open(grub_bootsect_file, "rb") as f:
         grubboot = f.read()
