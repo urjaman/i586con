@@ -2,7 +2,7 @@
 cd "$1"
 mkdir -p isofs.tmp/{isolinux,boot,img}
 cp syslinux/* isofs.tmp/isolinux/
-cp $HOST_DIR/share/syslinux/{ldlinux,libutil,menu,poweroff,chain}.c32 isofs.tmp/isolinux/
+cp $HOST_DIR/share/syslinux/{ldlinux,libutil,menu,poweroff,chain,vesainfo}.c32 isofs.tmp/isolinux/
 cp $HOST_DIR/share/syslinux/memdisk isofs.tmp/isolinux/
 cp $BR2_EXTERNAL_I586CON_PATH/board/isolinux.cfg isofs.tmp/isolinux/isolinux.cfg
 cp bzImage isofs.tmp/boot/
