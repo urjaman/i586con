@@ -1,10 +1,6 @@
 #!/bin/bash
 cd "$1"
-mkdir -p isofs.tmp/{isolinux,boot,img}
-cp syslinux/* isofs.tmp/isolinux/
-cp $HOST_DIR/share/syslinux/{ldlinux,libutil,menu,poweroff,chain,vesainfo}.c32 isofs.tmp/isolinux/
-cp $HOST_DIR/share/syslinux/memdisk isofs.tmp/isolinux/
-cp $BR2_EXTERNAL_I586CON_PATH/board/isolinux.cfg isofs.tmp/isolinux/isolinux.cfg
+mkdir -p isofs.tmp/{boot,img,rdparts}
 cp bzImage isofs.tmp/boot/
 cpio -i busybox < rootfs.cpio
 mkdir -p mini-initramfs/{dev,proc,sys,mnt}
@@ -18,20 +14,15 @@ $BR2_EXTERNAL_I586CON_PATH/util/usbmoddir.py ../target/lib/modules/*.* mini-init
 mkdir -p mini-initramfs/zram
 $BR2_EXTERNAL_I586CON_PATH/util/moddir.py ../target/lib/modules/*.* mini-initramfs/zram lzo_rle zram
 cp $BR2_EXTERNAL_I586CON_PATH/board/initramfs/init-ram mini-initramfs/init
-$HOST_DIR/bin/fakeroot $BR2_EXTERNAL_I586CON_PATH/board/make-initramfs.sh "$(realpath mini-initramfs)" "$(realpath isofs.tmp/boot/ram.img)"
+$HOST_DIR/bin/fakeroot $BR2_EXTERNAL_I586CON_PATH/board/make-initramfs.sh "$(realpath mini-initramfs)" "$(realpath isofs.tmp/rdparts/ram.img)"
 cp $BR2_EXTERNAL_I586CON_PATH/board/initramfs/init-cd mini-initramfs/init
-$HOST_DIR/bin/fakeroot $BR2_EXTERNAL_I586CON_PATH/board/make-initramfs.sh "$(realpath mini-initramfs)" "$(realpath isofs.tmp/boot/cd.img)"
+$HOST_DIR/bin/fakeroot $BR2_EXTERNAL_I586CON_PATH/board/make-initramfs.sh "$(realpath mini-initramfs)" "$(realpath isofs.tmp/rdparts/cd.img)"
 cp $BR2_EXTERNAL_I586CON_PATH/board/initramfs/init-hd mini-initramfs/init
-$HOST_DIR/bin/fakeroot $BR2_EXTERNAL_I586CON_PATH/board/make-initramfs.sh "$(realpath mini-initramfs)" "$(realpath isofs.tmp/boot/hd.img)"
+$HOST_DIR/bin/fakeroot $BR2_EXTERNAL_I586CON_PATH/board/make-initramfs.sh "$(realpath mini-initramfs)" "$(realpath isofs.tmp/rdparts/hd.img)"
 
-mkdir -p isofs.tmp/rdparts
-cp isofs.tmp/boot/{ram,cd,hd}.img isofs.tmp/rdparts
 mkdir -p fsmod
 $BR2_EXTERNAL_I586CON_PATH/util/moddir.py ../target/lib/modules/*.* fsmod isofs
 find fsmod | cpio -o -H newc | gzip > isofs.tmp/rdparts/isofs.cpio.gz
-cat isofs.tmp/rdparts/isofs.cpio.gz >> isofs.tmp/boot/ram.img
-cat isofs.tmp/rdparts/isofs.cpio.gz >> isofs.tmp/boot/cd.img
-cat isofs.tmp/rdparts/isofs.cpio.gz >> isofs.tmp/boot/hd.img
 
 rm fsmod/*
 $BR2_EXTERNAL_I586CON_PATH/util/moddir.py ../target/lib/modules/*.* fsmod ext4 crc32c_generic
@@ -45,14 +36,30 @@ cat ro.cpio rootfs.cpio.gz > isofs.tmp/img/rootfs.img
 stat --printf="%s" ro.cpio > isofs.tmp/img/ro-size
 cp rootfs.tar.gz isofs.tmp/img/save.tgz
 
+# Up to here; add files required for HD install/upgrade process
+$HOST_DIR/bin/genisoimage -V I586CON -J -r -o i586con-upgrade.img isofs.tmp
+# After here: rest of the files on the actual CD
+# (i named the upgrade image NOT .iso to avoid people burning it and trying to boot)
+
+cat isofs.tmp/rdparts/{ram.img,isofs.cpio.gz} > isofs.tmp/boot/ram.img
+cat isofs.tmp/rdparts/{cd.img,isofs.cpio.gz} > isofs.tmp/boot/cd.img
+cat isofs.tmp/rdparts/{hd.img,isofs.cpio.gz} > isofs.tmp/boot/hd.img
+
+mkdir -p isofs.tmp/isolinux
+cp syslinux/* isofs.tmp/isolinux/
+cp $HOST_DIR/share/syslinux/{ldlinux,libutil,menu,poweroff,chain,vesainfo}.c32 isofs.tmp/isolinux/
+cp $HOST_DIR/share/syslinux/memdisk isofs.tmp/isolinux/
+cp $BR2_EXTERNAL_I586CON_PATH/board/isolinux.cfg isofs.tmp/isolinux/isolinux.cfg
+
 dd if=/dev/zero of=isofs.tmp/boot/grubflop.bin bs=1k count=1440
 $HOST_DIR/bin/python3 $BR2_EXTERNAL_I586CON_PATH/board/rootfs-overlay/root/make-grub-floppy.py isofs.tmp/boot/grubflop.bin $HOST_DIR/bin ../target/usr/lib/grub/i386-pc
+
+cp memtest86+.bin isofs.tmp/boot/mt86p.bin
 
 if [ -d "$BR2_EXTERNAL_I586CON_PATH/../mp3" ]; then
 	cp -a "$BR2_EXTERNAL_I586CON_PATH/../mp3" isofs.tmp/
 fi
 $HOST_DIR/bin/genisoimage -V I586CON -J -r -b isolinux/isolinux.bin -no-emul-boot -boot-load-size 4 -boot-info-table -o i586con.iso isofs.tmp
-$HOST_DIR/bin/genisoimage -V I586CON  -J -r -m mp3 -b isolinux/isolinux.bin -no-emul-boot -boot-load-size 4 -boot-info-table -o i586con-upgrade.iso isofs.tmp
 (cd isofs.tmp; ls --block-size=K -s boot/bzImage img/rootfs.img)
 rm -rf isofs.tmp mini-initramfs fsmod
 $HOST_DIR/bin/isohybrid -t 0x96 i586con.iso

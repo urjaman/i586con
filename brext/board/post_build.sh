@@ -87,6 +87,8 @@ rm -f usr/lib/grub/i386-pc/{kernel.exec,gdb_grub,gmodule.pl} || true
 rm -rf share || true
 # this grub config is useless and confusing, get rid of it
 rm -fr boot/grub
+# Move memtest86+ to the images dir; we want it on the ISO, not in the filesystem
+mv boot/memtest* $BINARIES_DIR/ || true
 # no info pages here
 rm -fr share/info
 # gnu tar is also prefix-confused and installs rmt (which we dont need) under /libexec
