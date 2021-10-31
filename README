@@ -17,17 +17,21 @@ less tools-y, more fun:
 - linux-vt-setcolors (just "setcolors" on the CLI)
   + example themes in /usr/share
 
+Build dependencies (on arch linux):
+pacman -S wget cpio unzip rsync bc dosfstools mtools
+plus base-devel and git (but these are obvious, right?)
+
 How to build:
-use ./fextract.sh to download and extract+patch buildroot
-use ./init_bdir.sh to initialize a build directory
-(optionally make menuconfig or make linux-menuconfig
- if you need/want to adjust the kernel or package selection etc)
-make to build it (hopefully)
+- use ./fextract.sh to download and extract+patch buildroot
+- use ./init_bdir.sh to initialize a build directory
+   (optionally make menuconfig or make linux-menuconfig
+    if you need/want to adjust the kernel or package selection etc)
+- make to build it (hopefully)
 (Do read the scripts before using them.)
 
-If you just want to see what should come out of it,
-you might be able to download an example at:
-https://urja.dev/i586con-210513.iso
+If you just want an .iso,
+the autobuilder results might be found at:
+https://urja.dev/i586con_autobuilds/
 
 ## Tech notes
 -------------
