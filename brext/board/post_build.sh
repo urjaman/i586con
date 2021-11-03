@@ -95,7 +95,13 @@ rm -fr share/info
 rm -fr libexec
 cd "$1/usr/bin"
 # give us ldd
-[ -e ldd ] || ln -s ../lib/ld-musl-* ldd
+if [ ! -e ldd ]; then
+	cat <<- "EOF" > ldd
+	#!/bin/sh
+	exec /lib/ld-musl-i386.so.1 --list -- "$@"
+	EOF
+	chmod +x ldd
+fi
 # Add our own version file
 cd "$1/etc"
 $BR2_EXTERNAL_I586CON_PATH/util/version.sh > i586con/version
