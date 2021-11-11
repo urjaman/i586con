@@ -1,0 +1,12 @@
+comment "lcxterm requires ncurses"
+	depends on !BR2_PACKAGE_NCURSES
+
+config BR2_PACKAGE_LCXTERM
+	bool "lcxterm"	
+	depends on BR2_PACKAGE_NCURSES
+	help
+	  Linux Console X-like Terminal
+
+	  https://lcxterm.sourceforge.io/
+
+
