@@ -17,6 +17,9 @@ emailproc = ['ssh', 'kbb' + emhost, 'sendmail', '-t']
 version_file = "br-version"
 prev_version_file = "br-version.old"
 
+webhost = "https://urja.dev/"
+webpath = 'i586con_autobuilds/'
+
 s = {
     'email': False,
     'cont': False,
@@ -24,26 +27,39 @@ s = {
 }
 
 
-
-def htmlize(s):
+def html_esc(s):
     escapes = {
         '&': '&amp;',
         '>': '&gt;',
-        '<': '&lt;'
+        '<': '&lt;',
+        '"': '&quot;'
     }
-    prefix = '<html><head></head><body><pre>\n'
-    suffix = '</pre></body></html>\n'
     for k in escapes:
         s = s.replace(k, escapes[k])
-    return prefix + s + suffix
+    return s
 
-def html_link(link):
-    prefix = '<html><head></head><body><a href="'
+def html(body):
+    prefix = '<html><head></head><body>'
+    suffix = '</pre></body></html>\n'
+    return prefix + body + suffix
+
+def pre(s):
+    return '<pre>' + html_esc(s) + '</pre>'
+
+def htmlize(s):
+    return html(pre(s))
+
+def html_link(link, text=None):
+    if text is None:
+        text = link
+    prefix = '<a href="'
     mid = '">'
-    suffix = '</a></body></html>'
-    return prefix + link + mid + link + suffix
+    suffix = '</a>'
+    lnk = prefix + html_esc(link) + mid + html_esc(text) + suffix
+    return lnk
 
-def mail(subj, logfn = None, log = None, link=None):
+
+def mail(subj, logfn = None, log = None, texthtml=None):
     if logfn:
         with open(logfn) as f:
             log = f.read()
@@ -53,7 +69,10 @@ def mail(subj, logfn = None, log = None, link=None):
     msg['From'] = whoami
     msg['To'] = toaddr
 
-    if log:
+    if texthtml:
+        msg.set_content(texthtml[0])
+        msg.add_alternative(texthtml[1], subtype='html')
+    elif log:
         snip_threshold = 100
         if log.count('\n') > snip_threshold:
             log = log.splitlines()
@@ -62,9 +81,6 @@ def mail(subj, logfn = None, log = None, link=None):
 
         msg.set_content(log)
         msg.add_alternative(htmlize(log), subtype='html')
-    elif link:
-        msg.set_content(link)
-        msg.add_alternative(html_link(link), subtype='html')
     else:
         msg.set_content("\n")
 
@@ -163,13 +179,78 @@ def version():
     return subc(["./version.sh"], stdout=PIPE).decode().strip()
 
 
-def publish(fullv, image):
+def testsuite(fullv, image):
+    testweb_path = f"testresults/{fullv}"
+    test_path = f"releases/{testweb_path}"
+    os.makedirs(test_path, exist_ok=True)
+    logfn = test_path + "/cursed_output.txt"
+
+    cmd = [ "./cursedtester.py", image, test_path ]
+    print("Running the test suite ", cmd)
+
+    with open(logfn, "w") as lf:
+        r = sub(cmd, stdin=DEVNULL, stderr=STDOUT, stdout=lf)
+
+    # Send the reports to the webserver first and foremost
+    subc([ "scp", "-r", test_path, "urja.dev:srv/" + webpath + "testresults" ])
+
+    # Collect all summaries and HTML names
+    summaries = []
+    htmls = []
+    pretext = [[]]
+    insum = False
+    with open(logfn) as lf:
+        for L in lf:
+            if insum:
+                if L.startswith('=== HTML: '):
+                    insum = False
+                    _,h = L.strip().split(sep=': ',maxsplit=1)
+                    htmls.append(h)
+                else:
+                    summaries[-1].append(L)
+            else:
+                if L.startswith('=== SUMMARY '):
+                    summaries.append([L])
+                    pretext.append([])
+                    insum = True
+                else:
+                    pretext[-1].append(L)
+
+    if r:
+        tl = []
+        hl = [ "<pre>" ]
+        i = 0
+        while i < len(summaries):
+            s = summaries[i]
+            tl.append(s[0])
+            hl.append(html_link(webhost + webpath + testweb_path + '/' + htmls[i], s[0]))
+            for e in s[1:]:
+                tl.append(e)
+                hl.append(html_esc(e))
+            i += 1
+        hl.append("</pre>")
+        return ('\n'.join(tl) + '\n', '\n',join(hl) + '\n')
+    else:
+        if not summaries:
+            text = '\n'.join(pretext[0]) + '\n'
+            html = htmlize(text)
+        else:
+            i = len(summaries) - 1
+            tl = pretext[i] + summaries[i]
+            text = '\n'.join(tl) + '\n'
+            with open(test_path + '/' + htmls[i]) as hf:
+                html = hf.read()
+        mail(f"[{fullv}] testsuite failure {htmls[i]}", texthtml=(text, html))
+        sys.exit(1)
+
+
+def publish(fullv, image, testsums):
     rt = os.path.realpath('.')
     cmds = [
         [ 'git', 'push' ]
     ]
     isoname = 'i586con-' + fullv + '.iso'
-    targetpath = 'i586con_autobuilds/'
+    targetpath = webpath
     if s['email']: # Misnomer but ... maintainer mode-ish
         reldir = os.path.realpath('releases')
         os.makedirs(reldir, exist_ok=True)
@@ -191,7 +272,12 @@ def publish(fullv, image):
         cmds.append([ "rm", "-f", jsf, jsfnew ]) # cleanup
     subtea(cmds, rt + "/.publish-log", "publish failed")
     os.chdir(rt)
-    mail(f"i586con {fullv} built", link='https://urja.dev/' + targetpath + isoname)
+
+    link = webhost + webpath + isoname
+    text = link + '\n' + testsums[0]
+    html = html(html_link(link) + '<br>\n' + testsums[1])
+    mail(f"[{fullv}] success", texthtml=(text,html))
+
 
 updatemode = True
 if len(sys.argv) >= 2:
@@ -219,7 +305,7 @@ if updatemode:
     cur_brversion = latest_lts()
 
     # Run a pull in case I've updated stuff elsewhere in the meantime
-    sub(['git','pull'])
+    sub(['git','pull','--rebase'])
 
     if cur_brversion != prev_brversion:
         os.rename(version_file, prev_version_file)
@@ -255,7 +341,8 @@ if not os.path.exists(fextract_ok_f):
     run_fextract(cur_brversion)
 
 imagefile = build(brpath, buildpath, full_version)
-publish(full_version, imagefile)
+testsums = testsuite(full_version, imagefile)
+publish(full_version, imagefile, testsums)
 try:
     os.unlink(prev_version_file)
 except Exception:
