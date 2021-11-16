@@ -3,6 +3,7 @@ import os
 import sys
 import pty
 import time
+import datetime
 import json
 from select import select
 import subprocess
@@ -10,7 +11,6 @@ from subprocess import DEVNULL, PIPE, STDOUT
 
 # This you get with pacman -S python-pyte or similar :)
 import pyte
-
 
 
 def now():
@@ -274,7 +274,7 @@ def screenprint(screen, gr=None, desc=None, finalevt=False):
     if finalevt:
         summary = summarytxt(gr, nt, finalevt)
         print(summary, end='', flush=True)
-        fn = f"test-{gr['testname']}.html"
+        fn = f"{gr['testname']}.html"
         with open(fn, "w") as f:
             f.write(htmlfinalize(gr['usedcol'], gr['htmls'], summary))
         print(f"=== HTML: {fn}")
@@ -395,6 +395,7 @@ class EA:
             return self.reply
         return None
 
+test_number = 1
 class QemuRun:
     def __init__(self, testname, events_, bootentry=0, ram=60, net=None, cdrom=None, hda=None, usb=None, grub=False):
         self.name = testname
@@ -424,13 +425,15 @@ class QemuRun:
         self.qemuargs = [  "qemu-system-i386", "-curses", "-m", str(ram) ] + da + n
 
     def exec(self):
-        testname = self.name
+        global test_number
+        testname = f"{test_number:02d}-{self.name}"
+        test_number += 1
         events = self.events
 
         screen = pyte.Screen(80,25)
         stream = pyte.ByteStream(screen)
         mstr = boxit(self.qemuargs, screen.lines, screen.columns)
-        caster = AsciiCaster(f"test-{testname}.cast", screen.columns, screen.lines)
+        caster = AsciiCaster(f"{testname}.cast", screen.columns, screen.lines)
 
         t = basetime = now()
 
@@ -497,7 +500,6 @@ class QemuRun:
         return
 
 
-
 class Run:
     def __init__(self, *args, **kwargs):
         self.name = None
@@ -509,8 +511,8 @@ class Run:
 
 
 def boot_EA(login):
-    return [ EA("bootloader", "Automatic boot in", "\r", to=10, L=19),
-             EA("login prompt", "i586con login:", login + "\r", to=100) ]
+    return [ EA("bootloader", "Automatic boot in", "\r", to=20, L=19),
+             EA("login prompt", "i586con login:", login + "\r", to=200) ]
 
 events_boot = boot_EA("root") + [
     EA("logged in", 'i586con ~ #', "poweroff\r", to=20),
@@ -533,9 +535,7 @@ def events_install(fs="ext"):
     ]
 
 
-def run_testsuite():
-    [isofile] = sys.argv[1:]
-    isofile = os.path.realpath(isofile)
+def run_testsuite(isofile):
     hdname = "cursed.qcow"
     testsuite = [
         QemuRun("lowram-usb", events_boot, bootentry=2, ram=16, usb=isofile),
@@ -553,5 +553,17 @@ def run_testsuite():
     for evt in testsuite:
         evt.exec()
 
+if len(sys.argv) < 2 or len(sys.argv) > 3:
+    print(f"usage: {sys.argv[0]} <isofile> [test-results-path]")
+    sys.exit(1)
 
-run_testsuite()
+isofile = os.path.realpath(sys.argv[1])
+trp = sys.argv[2] if len(sys.argv) >= 3 else datetime.datetime.now().strftime("manualtest-%y%m%d-%H%M%S")
+try:
+    os.mkdir(trp)
+except FileExistsError:
+    pass
+os.chdir(trp)
+print(f"Test results will be written into '{trp}'")
+
+run_testsuite(isofile)
