@@ -11,22 +11,19 @@ mount -t squashfs -o loop,ro /ro.sqfs ro
 mount -t overlay overlay -o index=off,metacopy=off,lowerdir=ro/usr,upperdir=usr-ov,workdir=usr-wk /usr
 mount -t overlay overlay -o index=off,metacopy=off,lowerdir=ro/etc,upperdir=etc-ov,workdir=etc-wk /etc
 mount -t overlay overlay -o index=off,metacopy=off,lowerdir=ro/home,upperdir=home-ov,workdir=home-wk /home
-mount -t proc proc /proc
-ZRAMSIZE=$(tr ' ' '\n' < /proc/cmdline | grep 'zramsize=' | cut -d = -f 2-)
-if [ -z "$ZRAMSIZE" ]; then
-	ZRAMSIZE="16M"
+if [ -z "$zramsize" ]; then
+	zramsize="16M"
 fi
-if [ "$ZRAMSIZE" != "0" ]; then
+if [ "$zramsize" != "0" ]; then
 	mount -t sysfs sys /sys
 	/sbin/modprobe zram
 	cd /sys/block/zram0
-	echo $ZRAMSIZE > disksize
+	echo $zramsize > disksize
 	mkswap /dev/zram0
 	swapon -p 10 /dev/zram0
 	cd /
 	umount /sys
 fi
-umount /proc
 exec /sbin/init
 echo fallback
 exec /busybox sh
