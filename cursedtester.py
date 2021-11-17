@@ -268,16 +268,18 @@ def screenprint(screen, gr=None, desc=None, finalevt=False):
     disp = screen.display
     for y in range(len(disp)):
         print(f"{y:02d} {disp[y]}")
+    print(end='', flush=True)
     if gr and desc:
         h = htmlscreen(screen, gr['usedcol'])
         gr['htmls'].append((f"{desc} @ {nt:.1f}s" , h))
     if finalevt:
         summary = summarytxt(gr, nt, finalevt)
-        print(summary, end='', flush=True)
         fn = f"{gr['testname']}.html"
         with open(fn, "w") as f:
             f.write(htmlfinalize(gr['usedcol'], gr['htmls'], summary))
-        print(f"=== HTML: {fn}")
+        summary += f"=== HTML: {fn}\n"
+        print(summary, end='', flush=True)
+
 
 class AsciiCaster:
     def __init__(self, filename, width, height, term="linux"):
