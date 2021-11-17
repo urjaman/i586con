@@ -229,18 +229,18 @@ def testsuite(fullv, image):
                 hl.append(html_esc(e))
             i += 1
         hl.append("</pre>")
-        return ('\n'.join(tl) + '\n', '\n',join(hl) + '\n')
+        return ('\n'.join(tl) + '\n', '\n'.join(hl) + '\n')
     else:
         if not summaries:
-            text = '\n'.join(pretext[0]) + '\n'
-            html = htmlize(text)
+            tx = '\n'.join(pretext[0]) + '\n'
+            ht = htmlize(text)
         else:
             i = len(summaries) - 1
             tl = pretext[i] + summaries[i]
-            text = '\n'.join(tl) + '\n'
+            tx = '\n'.join(tl) + '\n'
             with open(test_path + '/' + htmls[i]) as hf:
-                html = hf.read()
-        mail(f"[{fullv}] testsuite failure {htmls[i]}", texthtml=(text, html))
+                ht = hf.read()
+        mail(f"[{fullv}] testsuite failure {htmls[i][:-5]}", texthtml=(tx, ht))
         sys.exit(1)
 
 
@@ -274,9 +274,9 @@ def publish(fullv, image, testsums):
     os.chdir(rt)
 
     link = webhost + webpath + isoname
-    text = link + '\n' + testsums[0]
-    html = html(html_link(link) + '<br>\n' + testsums[1])
-    mail(f"[{fullv}] success", texthtml=(text,html))
+    tx = link + '\n' + testsums[0]
+    ht = html(html_link(link) + '<br>\n' + testsums[1])
+    mail(f"[{fullv}] success", texthtml=(tx,ht))
 
 
 updatemode = True
