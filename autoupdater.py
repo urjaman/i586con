@@ -274,8 +274,8 @@ def publish(fullv, image, testsums):
     os.chdir(rt)
 
     link = webhost + webpath + isoname
-    tx = link + '\n' + testsums[0]
-    ht = html(html_link(link) + '<br>\n' + testsums[1])
+    tx = link + '\n\n' + testsums[0]
+    ht = html(html_link(link) + '<p>\n' + testsums[1])
     mail(f"[{fullv}] success", texthtml=(tx,ht))
 
 
