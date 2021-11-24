@@ -294,6 +294,15 @@ if len(sys.argv) >= 2:
             print(f"usage: {sys.argv[0]} [--email|--rebuild|--continue]")
             sys.exit(1)
 
+rb_once_f = ".rebuild-once"
+try:
+    with open(rb_once_f) as f:
+        rebuild_once = f.read().strip()
+    if not rebuild_once:
+        rebuild_once = "Unspecified reason"
+    os.unlink(rb_once_f)
+except Exception:
+    rebuild_once = False
 
 
 if updatemode:
@@ -316,8 +325,12 @@ if updatemode:
     full_version = version()
 
     if full_version == full_prev_version and not os.path.exists(prev_version_file):
-        print("Nothing to update.")
-        sys.exit(0)
+        if rebuild_once:
+            s['rebuild'] = True
+            print(f"Rebuilding for '{rebuild_once}'")
+        else:
+            print("Nothing to update.")
+            sys.exit(0)
 else:
     # Rebuild / Continue
     with open(version_file) as f:
