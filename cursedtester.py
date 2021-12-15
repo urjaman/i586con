@@ -367,7 +367,7 @@ def timeoutcheck(t, timeout, screen, gr, descr):
     n = now() - t
     if n > timeout:
         print(f"{descr} Timeout {timeout}:")
-        screenprint(screen, gr, "{descr} timeout", finalevt=f"{descr} - timeout")
+        screenprint(screen, gr, f"{descr} timeout", finalevt=f"{descr} - timeout")
         sys.exit(1)
 
 
@@ -517,13 +517,13 @@ def boot_EA(login):
              EA("login prompt", "i586con login:", login + "\r", to=200) ]
 
 events_boot = boot_EA("root") + [
-    EA("logged in", 'i586con ~ #', "poweroff\r", to=20),
+    EA("logged in", 'i586con ~ #', "poweroff\r", to=40),
     ]
 
 ssh_cfg = os.path.realpath("qemu-ssh-cfg")
 events_ssh = boot_EA("user") + [
     EA("logged in", 'user@i586con ~ $',
-        "mkdir -p .ssh\recho 'SSH-KEY' > .ssh/authorized_keys\rcd .ssh\r", to=20),
+        "mkdir -p .ssh\recho 'SSH-KEY' > .ssh/authorized_keys\rcd .ssh\r", to=40),
     EA("ssh key entered", 'user@i586con ~/.ssh $', "while ! pidof sshd; do sleep 1; done; sleep 5; cd /\r", to=10),
     EA("sshd started", 'user@i586con / $', ["ssh", "-F", ssh_cfg, "qemu-i586con", "exit"], to=400),
     EA("ssh test complete", '', "su -c poweroff\r"),
