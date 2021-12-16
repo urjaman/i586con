@@ -13,6 +13,9 @@ if [ "$1" == "--verify" ]; then
 	grep 'SHA1:' signed_sums | cut -f 2- -d ' ' | sha1sum -c
 	grep 'SHA256:' signed_sums | cut -f 2- -d ' ' | sha256sum -c
 	rm -f signed_sums
+else
+	# We check the SHA256 just for a transfer checksum
+	grep 'SHA256:' $BR_N.sign | cut -f 2- -d ' ' | sha256sum -c
 fi
 tar xf $BR_N
 mkdir -p dl
