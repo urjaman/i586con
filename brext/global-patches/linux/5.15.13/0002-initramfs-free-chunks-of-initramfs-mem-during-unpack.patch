@@ -1,0 +1,70 @@
+From 5d02a89dc6d2750a2cf168fb1e5faf5b43eac8fc Mon Sep 17 00:00:00 2001
+From: Urja Rannikko <urjaman@gmail.com>
+Date: Sun, 14 Nov 2021 11:18:22 +0200
+Subject: [PATCH 2/5] initramfs: free chunks of initramfs mem during unpack
+
+Allows one to unpack initramfs' that take over half
+of system RAM. This only works for uncompressed cpio data
+or between concatenated archives.
+
+Signed-off-by: Urja Rannikko <urjaman@gmail.com>
+---
+ init/initramfs.c | 21 ++++++++++++++++++++-
+ 1 file changed, 20 insertions(+), 1 deletion(-)
+
+diff --git a/init/initramfs.c b/init/initramfs.c
+index a842c0544745..b0bab3fb2041 100644
+--- a/init/initramfs.c
++++ b/init/initramfs.c
+@@ -17,6 +17,9 @@
+ #include <linux/init_syscalls.h>
+ #include <linux/umh.h>
+ 
++const unsigned long prefree_chunksz = 4*1024*1024;
++static void __init prefree_initramfs_mem(const void *p);
++
+ static ssize_t __init xwrite(struct file *file, const char *p, size_t count,
+ 		loff_t *pos)
+ {
+@@ -24,7 +27,11 @@ static ssize_t __init xwrite(struct file *file, const char *p, size_t count,
+ 
+ 	/* sys_write only can write MAX_RW_COUNT aka 2G-4K bytes at most */
+ 	while (count) {
+-		ssize_t rv = kernel_write(file, p, count, pos);
++		ssize_t rv = 0;
++		size_t wamt = count;
++		if (count > prefree_chunksz) wamt = prefree_chunksz;
++		prefree_initramfs_mem(p);
++		rv = kernel_write(file, p, wamt, pos);
+ 
+ 		if (rv < 0) {
+ 			if (rv == -EINTR || rv == -EAGAIN)
+@@ -494,6 +501,7 @@ static char * __init unpack_to_rootfs(char *buf, unsigned long len)
+ 			continue;
+ 		}
+ 		this_header = 0;
++		prefree_initramfs_mem(buf);
+ 		decompress = decompress_method(buf, len, &compress_name);
+ 		pr_debug("Detected %s compressed data\n", compress_name);
+ 		if (decompress) {
+@@ -644,6 +652,17 @@ static inline bool kexec_free_initrd(void)
+ }
+ #endif /* CONFIG_KEXEC_CORE */
+ 
++static void __init prefree_initramfs_mem(const void *p) {
++	unsigned long pi = (unsigned long)p;
++	if ((pi < (initrd_start + prefree_chunksz + PAGE_SIZE)) || (pi > initrd_end))
++		return;
++	if (!do_retain_initrd && initrd_start) {
++		// Okay, free _one_ chunk.
++		free_initrd_mem(initrd_start, initrd_start + prefree_chunksz);
++		initrd_start += prefree_chunksz;
++	}
++}
++
+ #ifdef CONFIG_BLK_DEV_RAM
+ static void __init populate_initrd_image(char *err)
+ {
+-- 
+2.34.1
+
