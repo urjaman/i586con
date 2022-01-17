@@ -1,0 +1,26 @@
+From 6f382d324d08d4d92693a7db84afabd71b981658 Mon Sep 17 00:00:00 2001
+From: Urja Rannikko <urjaman@gmail.com>
+Date: Sun, 14 Nov 2021 14:04:35 +0200
+Subject: [PATCH 5/5] hack out touchscreen misc support
+
+Signed-off-by: Urja Rannikko <urjaman@gmail.com>
+---
+ drivers/input/Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/input/Makefile b/drivers/input/Makefile
+index 037cc595106c..3514baa18f68 100644
+--- a/drivers/input/Makefile
++++ b/drivers/input/Makefile
+@@ -7,7 +7,7 @@
+ 
+ obj-$(CONFIG_INPUT)		+= input-core.o
+ input-core-y := input.o input-compat.o input-mt.o input-poller.o ff-core.o
+-input-core-y += touchscreen.o
++#input-core-y += touchscreen.o
+ 
+ obj-$(CONFIG_INPUT_FF_MEMLESS)	+= ff-memless.o
+ obj-$(CONFIG_INPUT_SPARSEKMAP)	+= sparse-keymap.o
+-- 
+2.34.1
+
