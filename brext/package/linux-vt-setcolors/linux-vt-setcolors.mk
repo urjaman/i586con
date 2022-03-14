@@ -15,6 +15,7 @@ endef
 
 define LINUX_VT_SETCOLORS_INSTALL_TARGET_CMDS
 	$(INSTALL) -D -m 0755 $(@D)/setcolors $(TARGET_DIR)/usr/bin
+	mkdir -p $(TARGET_DIR)/usr/share
 	cp -r $(@D)/example-colors $(TARGET_DIR)/usr/share/linux-vt-setcolors-example-colors
 endef
 
