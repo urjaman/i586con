@@ -124,7 +124,7 @@ def latest_lts():
     url = "https://buildroot.org/download.html"
     r = urllib.request.urlopen(url, timeout=30)
     lines = r.readlines()
-    search = b'Latest long term support release:'
+    search = b' long term support release:'
 
     for L in lines:
         if search in L:
