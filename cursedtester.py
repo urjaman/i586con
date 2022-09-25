@@ -424,7 +424,7 @@ class QemuRun:
         if bootentry:
             events[0].reply = ("\x1b\x5b\x42" * bootentry) + '\r'
         self.events = events
-        self.qemuargs = [  "qemu-system-i386", "-curses", "-m", str(ram) ] + da + n
+        self.qemuargs = [  "qemu-system-i386", "-display", "curses", "-m", str(ram) ] + da + n
 
     def exec(self):
         global test_number
