@@ -12,6 +12,7 @@ from subprocess import DEVNULL, PIPE, STDOUT
 # This you get with pacman -S python-pyte or similar :)
 import pyte
 
+global full_version
 
 def now():
     return time.clock_gettime(time.CLOCK_MONOTONIC)
@@ -59,7 +60,7 @@ def html_esc(s):
 def link(tgt, text):
     return f'<a href="{tgt}">{html_esc(text)}</a>'
 
-def htmlfinalize(usedcol, htmls, summary=None, embeddable=False):
+def htmlfinalize(testname, usedcol, htmls, summary=None, embeddable=False):
     prefix = '<!DOCTYPE html>\n<html><head><meta charset="utf-8"/></head><body>'
     suffix = '</body></html>'
     if embeddable:
@@ -117,6 +118,25 @@ body {
 }
 """
 
+    # This fixed piece of junk JS makes a link to Asciicast Player
+    castlinkjs = """
+<h3><a id="castlink">AsciiCast</a></h3>
+<p/>
+<script>
+var a = document.getElementById('castlink');
+var ps = window.location.pathname.split('/');
+var ps1 = ps[ps.length-2];
+var ps2 = ps[ps.length-1];
+var p = `${ps1}/${ps2}`.slice(0,-5);
+a.setAttribute('href', `/castplayer/?u=${p}`);
+</script>
+"""
+    if full_version:
+        urlbase = "https://urja.dev/castplayer/?u="
+        url = urlbase + full_version + '/' + testname
+        castlinkjs = "<h3>" + link(url, "AsciiCast") + "</h3><p/>"
+
+
     # This onwards is CSS that relates technically to the terminal displays etc
     presettings = [
             "font-family: monospace",
@@ -168,7 +188,7 @@ body {
     if summary:
         fullout += "<pre>" + html_esc(summary) + "</pre>"
     fullout += spacerhtml
-    return prefix + style + fullout + suffix
+    return prefix + style + castlinkjs + fullout + suffix
 
 def htmlscreen(screen, usedcol = None):
     if usedcol is None:
@@ -276,7 +296,7 @@ def screenprint(screen, gr=None, desc=None, finalevt=False):
         summary = summarytxt(gr, nt, finalevt)
         fn = f"{gr['testname']}.html"
         with open(fn, "w") as f:
-            f.write(htmlfinalize(gr['usedcol'], gr['htmls'], summary))
+            f.write(htmlfinalize(gr['testname'], gr['usedcol'], gr['htmls'], summary))
         summary += f"=== HTML: {fn}\n"
         print(summary, end='', flush=True)
 
@@ -555,12 +575,17 @@ def run_testsuite(isofile):
     for evt in testsuite:
         evt.exec()
 
-if len(sys.argv) < 2 or len(sys.argv) > 3:
-    print(f"usage: {sys.argv[0]} <isofile> [test-results-path]")
+if len(sys.argv) < 2 or len(sys.argv) > 4:
+    print(f"usage: {sys.argv[0]} <isofile> [test-results-path] [full-version]")
     sys.exit(1)
 
 isofile = os.path.realpath(sys.argv[1])
 trp = sys.argv[2] if len(sys.argv) >= 3 else datetime.datetime.now().strftime("manualtest-%y%m%d-%H%M%S")
+full_version = sys.argv[3] if len(sys.argv) >= 4 else None
+
+if full_version:
+    trp = trp + '/' + full_version
+
 try:
     os.mkdir(trp)
 except FileExistsError:

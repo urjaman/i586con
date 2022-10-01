@@ -181,18 +181,19 @@ def version():
 
 def testsuite(fullv, image):
     testweb_path = f"testresults/{fullv}"
-    test_path = f"releases/{testweb_path}"
-    os.makedirs(test_path, exist_ok=True)
-    logfn = test_path + "/cursed_output.txt"
+    test_path = f"releases/testresults"
+    test_path_full = test_path + '/' + fullv
+    os.makedirs(test_path_full, exist_ok=True)
+    logfn = test_path_full + "/cursed_output.txt"
 
-    cmd = [ "./cursedtester.py", image, test_path ]
+    cmd = [ "./cursedtester.py", image, test_path, fullv ]
     print("Running the test suite ", cmd)
 
     with open(logfn, "w") as lf:
         r = sub(cmd, stdin=DEVNULL, stderr=STDOUT, stdout=lf)
 
     # Send the reports to the webserver first and foremost
-    subc([ "scp", "-r", test_path, "urja.dev:srv/" + webpath + "testresults" ])
+    subc([ "scp", "-r", test_path_full, "urja.dev:srv/" + webpath + "testresults" ])
 
     # Collect all summaries and HTML names
     summaries = []
@@ -201,6 +202,7 @@ def testsuite(fullv, image):
     insum = False
     with open(logfn) as lf:
         for L in lf:
+            L = L.rstrip("\n")
             if insum:
                 if L.startswith('=== HTML: '):
                     insum = False
@@ -216,6 +218,8 @@ def testsuite(fullv, image):
                 else:
                     pretext[-1].append(L)
 
+    castpath = webhost + "castplayer/?u=" + fullv + "/"
+
     if r:
         tl = []
         hl = [ "<pre>" ]
@@ -223,7 +227,13 @@ def testsuite(fullv, image):
         while i < len(summaries):
             s = summaries[i]
             tl.append(s[0])
-            hl.append(html_link(webhost + webpath + testweb_path + '/' + htmls[i], s[0]))
+
+            testname = htmls[i][:-5]
+            linkline = html_link(webhost + webpath + testweb_path + '/' + htmls[i], s[0])
+            linkline += ' '
+            linkline += html_link(castpath + testname, "AsciiCast")
+            hl.append(linkline)
+
             for e in s[1:]:
                 tl.append(e)
                 hl.append(html_esc(e))
