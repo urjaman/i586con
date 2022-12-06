@@ -1,0 +1,135 @@
+From 3f198f53625619a66f8f827a6e34b0208a873c66 Mon Sep 17 00:00:00 2001
+From: Urja Rannikko <urjaman@gmail.com>
+Date: Sun, 14 Nov 2021 11:44:03 +0200
+Subject: [PATCH 4/5] Revert "x86/setup: Always reserve the first 1M of RAM"
+
+This reverts commit f1d4d47c5851b348b7713007e152bc68b94d728b.
+Needed a couple of manual fixups, just so you know i touched
+this :P (and a comment.)
+---
+ arch/x86/kernel/setup.c        | 24 ++++++++++++++----------
+ arch/x86/platform/efi/quirks.c | 12 ------------
+ arch/x86/realmode/init.c       | 13 +++++--------
+ 3 files changed, 19 insertions(+), 30 deletions(-)
+
+diff --git a/arch/x86/kernel/setup.c b/arch/x86/kernel/setup.c
+index 60209a5120c5..8af64c11a180 100644
+--- a/arch/x86/kernel/setup.c
++++ b/arch/x86/kernel/setup.c
+@@ -650,11 +650,11 @@ static void __init trim_snb_memory(void)
+ 	 * them from accessing certain memory ranges, namely anything below
+ 	 * 1M and in the pages listed in bad_pages[] above.
+ 	 *
+-	 * To avoid these pages being ever accessed by SNB gfx devices reserve
+-	 * bad_pages that have not already been reserved at boot time.
+-	 * All memory below the 1 MB mark is anyway reserved later during
+-	 * setup_arch(), so there is no need to reserve it here.
++	 * To avoid these pages being ever accessed by SNB gfx devices
++	 * reserve all memory below the 1 MB mark and bad_pages that have
++	 * not already been reserved at boot time.
+ 	 */
++	memblock_reserve(0, 1<<20);
+ 
+ 	for (i = 0; i < ARRAY_SIZE(bad_pages); i++) {
+ 		if (memblock_reserve(bad_pages[i], PAGE_SIZE))
+@@ -746,14 +746,14 @@ static void __init early_reserve_memory(void)
+ 	 * The first 4Kb of memory is a BIOS owned area, but generally it is
+ 	 * not listed as such in the E820 table.
+ 	 *
+-	 * Reserve the first 64K of memory since some BIOSes are known to
+-	 * corrupt low memory. After the real mode trampoline is allocated the
+-	 * rest of the memory below 640k is reserved.
++	 * Reserve the first memory page and typically some additional
++	 * memory (64KiB by default) since some BIOSes are known to corrupt
++	 * low memory. See the Kconfig help text for X86_RESERVE_LOW.
+ 	 *
+ 	 * In addition, make sure page 0 is always reserved because on
+ 	 * systems with L1TF its contents can be leaked to user processes.
+ 	 */
+-	memblock_reserve(0, SZ_64K);
++	memblock_reserve(0, ALIGN(reserve_low, PAGE_SIZE));
+ 
+ 	early_reserve_initrd();
+ 
+@@ -761,7 +761,6 @@ static void __init early_reserve_memory(void)
+ 
+ 	reserve_ibft_region();
+ 	reserve_bios_regions();
+-	trim_snb_memory();
+ }
+ 
+ /*
+@@ -1094,7 +1093,12 @@ void __init setup_arch(char **cmdline_p)
+ 			(max_pfn_mapped<<PAGE_SHIFT) - 1);
+ #endif
+ 
++	reserve_real_mode();
++
+ 	/*
++	 * NB: several hundred kilobytes are worth it for i586con.
++	 * The rest of this comment block applies to upstream kernel...
++         *
+ 	 * Find free memory for the real mode trampoline and place it there. If
+ 	 * there is not enough free memory under 1M, on EFI-enabled systems
+ 	 * there will be additional attempt to reclaim the memory for the real
+@@ -1108,7 +1112,7 @@ void __init setup_arch(char **cmdline_p)
+ 	 * Moreover, on machines with SandyBridge graphics or in setups that use
+ 	 * crashkernel the entire 1M is reserved anyway.
+ 	 */
+-	reserve_real_mode();
++	trim_snb_memory();
+ 
+ 	init_mem_mapping();
+ 
+diff --git a/arch/x86/platform/efi/quirks.c b/arch/x86/platform/efi/quirks.c
+index b0b848d6933a..48c7afcfb29a 100644
+--- a/arch/x86/platform/efi/quirks.c
++++ b/arch/x86/platform/efi/quirks.c
+@@ -451,18 +451,6 @@ void __init efi_free_boot_services(void)
+ 			size -= rm_size;
+ 		}
+ 
+-		/*
+-		 * Don't free memory under 1M for two reasons:
+-		 * - BIOS might clobber it
+-		 * - Crash kernel needs it to be reserved
+-		 */
+-		if (start + size < SZ_1M)
+-			continue;
+-		if (start < SZ_1M) {
+-			size -= (SZ_1M - start);
+-			start = SZ_1M;
+-		}
+-
+ 		memblock_free_late(start, size);
+ 	}
+ 
+diff --git a/arch/x86/realmode/init.c b/arch/x86/realmode/init.c
+index 1d20ed4b2872..5256df7f995c 100644
+--- a/arch/x86/realmode/init.c
++++ b/arch/x86/realmode/init.c
+@@ -55,16 +55,13 @@ void __init reserve_real_mode(void)
+ 
+ 	/* Has to be under 1M so we can execute real-mode AP code. */
+ 	mem = memblock_phys_alloc_range(size, PAGE_SIZE, 0, 1<<20);
+-	if (!mem)
++	if (!mem) {
+ 		pr_info("No sub-1M memory is available for the trampoline\n");
+-	else
+-		set_real_mode_mem(mem);
++		return;
++	}
+ 
+-	/*
+-	 * Unconditionally reserve the entire fisrt 1M, see comment in
+-	 * setup_arch().
+-	 */
+-	memblock_reserve(0, SZ_1M);
++	memblock_reserve(mem, size);
++	set_real_mode_mem(mem);
+ }
+ 
+ static void sme_sev_setup_real_mode(struct trampoline_header *th)
+-- 
+2.38.1
+
