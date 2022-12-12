@@ -231,7 +231,7 @@ def testsuite(fullv, image):
             testname = htmls[i][:-5]
             linkline = html_link(webhost + webpath + testweb_path + '/' + htmls[i], s[0])
             linkline += ' '
-            linkline += html_link(castpath + testname, "AsciiCast")
+            linkline += html_link(castpath + testname, "== AsciiCast ==")
             hl.append(linkline)
 
             for e in s[1:]:
