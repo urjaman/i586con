@@ -1,0 +1,24 @@
+From a9d29e3c8145fb32bde796243e0130142d5975e5 Mon Sep 17 00:00:00 2001
+From: Urja Rannikko <urjaman@gmail.com>
+Date: Sun, 7 May 2023 20:56:34 +0300
+Subject: [PATCH] smaller libsamplerate
+
+---
+ package/libsamplerate/libsamplerate.mk | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/package/libsamplerate/libsamplerate.mk b/package/libsamplerate/libsamplerate.mk
+index 2844fde3..76d997c4 100644
+--- a/package/libsamplerate/libsamplerate.mk
++++ b/package/libsamplerate/libsamplerate.mk
+@@ -12,6 +12,7 @@ LIBSAMPLERATE_DEPENDENCIES = host-pkgconf
+ # sndfile is only used for examples and tests so it doesn't make sense
+ # to support it as an optional dependency
+ LIBSAMPLERATE_CONF_OPTS = \
++	--disable-sinc-best \
+ 	--disable-fftw \
+ 	--disable-sndfile \
+ 	--program-transform-name=''
+-- 
+2.39.1
+
