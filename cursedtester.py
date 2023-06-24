@@ -553,7 +553,7 @@ def events_install(fs="ext"):
     return boot_EA("root") + [
         EA("logged in", 'i586con ~ #', "printf 'n\\n\\n\\n\\n\\nw\\n' | fdisk /dev/sda\r", to=20),
         EA("fdisk complete", 'Syncing disks.', f"printf '{fs}\\n\\nyes\\n' | hdinstall /dev/sda1 /dev/sda\r", L=-3),
-        EA("install complete", 'Installation complete', "poweroff\r", to=240, L=-2),
+        EA("install complete", 'Installation complete', "poweroff\r", to=300, L=-2),
     ]
 
 
