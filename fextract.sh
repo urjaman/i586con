@@ -9,7 +9,7 @@ BR_N=buildroot-$BR_V.tar.xz
 if [ "$1" == "--verify" ]; then
 	# The signature they provide is an awkward signed message with SHA1 and SHA256
 	# We're checking both to make sure
-	gpg --output signed_sums --verify $BR_N.sign
+	gpg --no-default-keyring --keyring $(pwd)/buildroot_pubkey.gpg --output signed_sums --verify $BR_N.sign
 	grep 'SHA1:' signed_sums | cut -f 2- -d ' ' | sha1sum -c
 	grep 'SHA256:' signed_sums | cut -f 2- -d ' ' | sha256sum -c
 	rm -f signed_sums
