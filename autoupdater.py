@@ -9,7 +9,7 @@ from email.message import EmailMessage
 
 
 # These are slightly... split apart, to make them not attract bots searching for addresses.
-emhost =  '\x40' + 'urja' + '.dev'
+emhost =  '\x40' + 'tea.urja' + '.dev'
 whoami = 'i586con-BB <kbb' + emhost + '>'
 toaddr = 'urja' + emhost
 emailproc = ['ssh', 'kbb' + emhost, 'sendmail', '-t']
