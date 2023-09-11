@@ -10,9 +10,9 @@ grep -q '#/usr/bin/ssh-keygen' N50sshd || sed -i '13 s|/usr/bin/ssh-keygen|#/usr
 grep -q 'ed25519' N50sshd || sed -i $'13 a \\\t[ -e /etc/ssh/ssh_host_ed25519_key ] || /usr/bin/ssh-keygen -q -N "" -t ed25519 -f /etc/ssh/ssh_host_ed25519_key' N50sshd
 # config sshd to expect just ED25519
 sed -i 's|#HostKey /etc/ssh/ssh_host_ed25519_key|HostKey /etc/ssh/ssh_host_ed25519_key|' ../ssh/sshd_config
-
 # do not auto-do the urandom stuff since we have no randomness on a CD
 [ -e S20urandom ] && mv S20urandom N20urandom
+[ -e S20seedrng ] && mv S20seedrng N20seedrng
 # do not autostart telnetd, FFS (it exists to allow manual careful use in controlled environments, not autorunning lol)
 [ -e S50telnet ] && mv S50telnet N50telnet
 # no sysctls are used, thus get rid of it
@@ -52,6 +52,13 @@ rm -rf usr/share/mc/help/mc.hlp.*
 rm -rf usr/share/zoneinfo/right
 # these python modules are not needed for our use case
 rm -rf usr/lib/python*/{ensurepip,distutils,unittest,turtle*}
+# this "leaking" is a python3.mk bug
+rm -f usr/bin/smtpd.py.*
+# these modules are deprecated and not needed for us
+rm -rf usr/lib/python*/{aifc,chunk,nntplib,pipes,sunau,xdrlib}.py*
+# the python config-*/ dir seems to be unnecessary on a target without C compiler, i think?
+rm -rf usr/lib/python*/config-3.*
+
 # the stdcpp gdb helper thing is very not needed
 rm -f usr/lib/libstdc++.so.*-gdb.py
 # we only need smartctl, not the rest of smartmontools

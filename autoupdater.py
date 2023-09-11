@@ -12,7 +12,7 @@ from email.message import EmailMessage
 emhost =  '\x40' + 'tea.urja' + '.dev'
 whoami = 'i586con-BB <kbb' + emhost + '>'
 toaddr = 'urja' + emhost
-emailproc = ['ssh', 'kbb' + emhost, 'sendmail', '-t']
+emailproc = ['ssh', 'kbb' + '\x40urja.dev', 'sendmail', '-t']
 
 version_file = "br-version"
 prev_version_file = "br-version.old"
