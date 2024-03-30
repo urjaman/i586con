@@ -1,5 +1,14 @@
+From ee20ab6ce1cac2ddb64884d194e46926a5a76fd3 Mon Sep 17 00:00:00 2001
+From: Urja Rannikko <urjaman@gmail.com>
+Date: Sat, 30 Mar 2024 11:50:25 +0200
+Subject: [PATCH 3/4] links force no libevent
+
+---
+ package/links/links.mk | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
 diff --git a/package/links/links.mk b/package/links/links.mk
-index 1f1a7a91..a78337c9 100644
+index a861fd65..7b3556c1 100644
 --- a/package/links/links.mk
 +++ b/package/links/links.mk
 @@ -70,12 +70,12 @@ else
@@ -20,3 +29,6 @@ index 1f1a7a91..a78337c9 100644
  
  ifeq ($(BR2_PACKAGE_OPENSSL),y)
  LINKS_CONF_OPTS += --with-ssl --enable-ssl-pkgconfig
+-- 
+2.44.0
+

@@ -1,14 +1,14 @@
-From a9d29e3c8145fb32bde796243e0130142d5975e5 Mon Sep 17 00:00:00 2001
+From f0d04007a223353f4f94704b57afc89ab31ba6a4 Mon Sep 17 00:00:00 2001
 From: Urja Rannikko <urjaman@gmail.com>
-Date: Sun, 7 May 2023 20:56:34 +0300
-Subject: [PATCH] smaller libsamplerate
+Date: Sat, 30 Mar 2024 11:51:01 +0200
+Subject: [PATCH 4/4] smaller libsamplerate
 
 ---
  package/libsamplerate/libsamplerate.mk | 1 +
  1 file changed, 1 insertion(+)
 
 diff --git a/package/libsamplerate/libsamplerate.mk b/package/libsamplerate/libsamplerate.mk
-index 2844fde3..76d997c4 100644
+index 0ac3c424..aa1a601c 100644
 --- a/package/libsamplerate/libsamplerate.mk
 +++ b/package/libsamplerate/libsamplerate.mk
 @@ -12,6 +12,7 @@ LIBSAMPLERATE_DEPENDENCIES = host-pkgconf
@@ -20,5 +20,5 @@ index 2844fde3..76d997c4 100644
  	--disable-sndfile \
  	--program-transform-name=''
 -- 
-2.39.1
+2.44.0
 

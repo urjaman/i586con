@@ -1,5 +1,14 @@
+From 52fb7a0a90f940e950d7332d5943652683d57ed2 Mon Sep 17 00:00:00 2001
+From: Urja Rannikko <urjaman@gmail.com>
+Date: Sat, 30 Mar 2024 11:49:43 +0200
+Subject: [PATCH 2/4] allow fuse module
+
+---
+ package/libfuse3/libfuse3.mk | 4 ----
+ 1 file changed, 4 deletions(-)
+
 diff --git a/package/libfuse3/libfuse3.mk b/package/libfuse3/libfuse3.mk
-index 1dbe918c..0f4037e2 100644
+index f5c9dae8..debeb2d3 100644
 --- a/package/libfuse3/libfuse3.mk
 +++ b/package/libfuse3/libfuse3.mk
 @@ -26,8 +26,4 @@ define LIBFUSE3_PERMISSIONS
@@ -11,3 +20,6 @@ index 1dbe918c..0f4037e2 100644
 -endef
 -
  $(eval $(meson-package))
+-- 
+2.44.0
+

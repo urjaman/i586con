@@ -1,15 +1,27 @@
+From da3ba5aa13c66fe7aa756c4f6084521f20898e41 Mon Sep 17 00:00:00 2001
+From: Urja Rannikko <urjaman@gmail.com>
+Date: Sat, 30 Mar 2024 11:48:00 +0200
+Subject: [PATCH 1/4] slimmer libopenssl
+
+---
+ package/libopenssl/libopenssl.mk | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
 diff --git a/package/libopenssl/libopenssl.mk b/package/libopenssl/libopenssl.mk
-index fc22c204..0bb9db30 100644
+index feb5026c..be937d0e 100644
 --- a/package/libopenssl/libopenssl.mk
 +++ b/package/libopenssl/libopenssl.mk
 @@ -78,7 +78,9 @@ define LIBOPENSSL_CONFIGURE_CMDS
  			$(if $(BR2_STATIC_LIBS),no-shared,shared) \
- 			$(if $(BR2_PACKAGE_HAS_CRYPTODEV),enable-devcryptoeng) \
+ 			$(if $(BR2_PACKAGE_CRYPTODEV_LINUX),enable-devcryptoeng) \
  			no-rc5 \
 -			enable-camellia \
 +			no-camellia \
 +			no-aria \
 +			no-sse2 \
+ 			no-docs \
  			no-tests \
  			no-fuzz-libfuzzer \
- 			no-fuzz-afl \
+-- 
+2.44.0
+
