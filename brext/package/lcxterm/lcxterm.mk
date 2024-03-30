@@ -4,8 +4,8 @@
 #
 ################################################################################
 
-LCXTERM_VERSION = eab3f668e2fa2a12d8ef3d9cc05fa2212db7c37a
-LCXTERM_SITE = $(call gitlab,klamonte,lcxterm,$(LCXTERM_VERSION))
+LCXTERM_VERSION = 5f5f259b03dc4f6eb3d30144c0542a70e9427f91
+LCXTERM_SITE = $(call gitlab,AutumnMeowMeow,lcxterm,$(LCXTERM_VERSION))
 LCXTERM_DEPENDENCIES = ncurses
 
 ifeq ($(BR2_PACKAGE_GPM),y)
