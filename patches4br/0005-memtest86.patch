@@ -1,0 +1,40 @@
+From 21610f0fcbf84503475c8258f2f0a41b35eb4363 Mon Sep 17 00:00:00 2001
+From: Urja Rannikko <urjaman@gmail.com>
+Date: Tue, 27 May 2025 03:21:55 +0300
+Subject: [PATCH] package/memtest86: build with the target toolchain
+
+We need to override AS, CC and OBJCOPY in memtest86 Makefile,
+but not CFLAGS - so can't just move TARGET_CONFIGURE_OPTS on
+the other side of $(MAKE).
+Found by attempting to build for i586 on an ARM64 host.
+
+Signed-off-by: Urja Rannikko <urjaman@gmail.com>
+---
+ package/memtest86/memtest86.mk | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/package/memtest86/memtest86.mk b/package/memtest86/memtest86.mk
+index 4f9c1b9a28..e912574910 100644
+--- a/package/memtest86/memtest86.mk
++++ b/package/memtest86/memtest86.mk
+@@ -13,14 +13,16 @@ MEMTEST86_INSTALL_TARGET = NO
+ 
+ ifeq ($(BR2_i386),y)
+ MEMTEST86_BUILD_DIR = build32
++MEMTEST86_AS = $(TARGET_AS) -32
+ else
+ ifeq ($(BR2_x86_64),y)
+ MEMTEST86_BUILD_DIR = build64
++MEMTEST86_AS = $(TARGET_AS) -64
+ endif
+ endif
+ 
+ define MEMTEST86_BUILD_CMDS
+-	$(TARGET_CONFIGURE_OPTS) $(MAKE) -C $(@D)/$(MEMTEST86_BUILD_DIR)
++	$(TARGET_CONFIGURE_OPTS) $(MAKE) AS="$(MEMTEST86_AS)" CC="$(TARGET_CC)" OBJCOPY="$(TARGET_OBJCOPY)" -C $(@D)/$(MEMTEST86_BUILD_DIR)
+ endef
+ 
+ define MEMTEST86_INSTALL_IMAGES_CMDS
+-- 
+2.45.2
+
