@@ -5,9 +5,9 @@ cd "$1/etc/init.d"
 [ -e S50sshd ] && mv S50sshd N50sshd
 # sshd starts up faster if we just use ED25519 host key... thus:
 # disable but leave commented the ssh-keygen -A call
-grep -q '#/usr/bin/ssh-keygen' N50sshd || sed -i '13 s|/usr/bin/ssh-keygen|#/usr/bin/ssh-keygen|' N50sshd
+grep -q '#/usr/bin/ssh-keygen' N50sshd || sed -i '16 s|/usr/bin/ssh-keygen|#/usr/bin/ssh-keygen|' N50sshd
 # add a special call to only make an ED25519 host key
-grep -q 'ed25519' N50sshd || sed -i $'13 a \\\t[ -e /etc/ssh/ssh_host_ed25519_key ] || /usr/bin/ssh-keygen -q -N "" -t ed25519 -f /etc/ssh/ssh_host_ed25519_key' N50sshd
+grep -q 'ed25519' N50sshd || sed -i $'16 a \\\t[ -e /etc/ssh/ssh_host_ed25519_key ] || /usr/bin/ssh-keygen -q -N "" -t ed25519 -f /etc/ssh/ssh_host_ed25519_key' N50sshd
 # config sshd to expect just ED25519
 sed -i 's|#HostKey /etc/ssh/ssh_host_ed25519_key|HostKey /etc/ssh/ssh_host_ed25519_key|' ../ssh/sshd_config
 # do not auto-do the urandom stuff since we have no randomness on a CD
@@ -19,7 +19,7 @@ sed -i 's|#HostKey /etc/ssh/ssh_host_ed25519_key|HostKey /etc/ssh/ssh_host_ed255
 rm -f S02sysctl
 # do not wait to settle udev before giving a prompt, the
 # login/VTs work just fine without udev too :P
-grep -q children-max S10udev || sed -i 's/udevd -d/udevd --children-max=2 -d/g' S10udev
+grep -q children-max S10udev || sed -i 's/UDEVD_ARGS="-d"/UDEVD_ARGS="--children-max=2 -d"/g' S10udev
 sed -i '/udevadm settle/d' S10udev
 cd "$1/etc"
 # Add a bunch of getty's and the log VT
@@ -51,7 +51,7 @@ rm -rf usr/share/mc/help/mc.hlp.*
 # we only need the posix zoneinfo (if even that but i like the idea...)
 rm -rf usr/share/zoneinfo/right
 # these python modules are not needed for our use case
-rm -rf usr/lib/python*/{ensurepip,distutils,unittest,turtle*}
+rm -rf usr/lib/python*/{ensurepip,distutils,unittest,turtle*,multiprocessing}
 # this "leaking" is a python3.mk bug
 rm -f usr/bin/smtpd.py.*
 # these modules are deprecated and not needed for us
@@ -89,6 +89,7 @@ rm -f usr/lib/libpcre2-posix.so.*
 
 # e2fsprogs "debugfs" would use this, but we dont ship that
 rm -f usr/lib/libss.so.*
+rm -rf usr/share/et
 
 # Nobody links to the C++ FLAC interface
 rm -f usr/lib/libFLAC++.so.*
@@ -101,6 +102,7 @@ rm -f usr/lib/libpsx.so.*
 
 # Sorry, no fancy key stuff with ssh for you
 rm -f usr/bin/ssh-{add,agent,keyscan}
+rm -f usr/libexec/ssh-pkcs11-helper
 
 # ALSA libatopology is not used by any of the tools we include
 rm -rf usr/lib/libatopology.so*
@@ -113,6 +115,12 @@ rm -f usr/lib/libflashrom.so*
 
 # more utils than we needed
 rm -f usr/bin/{choom,colcrt,compile_et,devdump,enosys,fincore,mapscrn,metaflac,pcilmr,usbhid-dump}
+
+# This is a hard one, but only one NTFS driver, please.
+rm -f usr/bin/lowntfs-3g
+
+# madplay provides A-B-X-testing ... we dont need that
+rm -f usr/bin/abxtest
 
 # more utils than we needed, sbin version
 rm -f usr/sbin/{blkpr,blkzone,chcpu,fsfreeze,netscsid}
