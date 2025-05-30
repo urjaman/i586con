@@ -69,15 +69,45 @@ rm -f etc/smartd.conf
 rm -rf etc/smartd_warning.d
 # We wanted libglib. We got libgio. None of what we wanted actually uses it, or so it seems.
 # This is something to keep an eye on and test libglib-using stuff carefully (sshfs, mc)
-rm -f bin/{gapplication,gdbus,gio,gio-querymodules,gresource,gsettings}
+rm -f bin/{gapplication,gdbus,gio,gio-querymodules,gresource,gsettings,gi-compile-repository,gi-*-typelib}
 rm -f lib/libgio-2*
+rm -f lib/libgirepository*
+rm -rf usr/lib/gio
 # After those are gone, a couple of other libg* things are just unused. For now, again.
 rm -f lib/lib{gobject,gthread,gmodule}-*
 # libevent is only there to allow us to build NTP package, from which we use ntpdate,
 # which does not need libevent... thus get rid of libevent. This also needs care
 # so that we dont accidentally build something against libevent ........ sigh.
 rm -f lib/libevent*
+# glib needs pcre2, but we dont need their test program(s) (?)
+rm -f usr/bin/pcre2*
+# The PCRE2 POSIX API is unused
+rm -f usr/lib/libpcre2-posix.so.*
+
+# e2fsprogs "debugfs" would use this, but we dont ship that
+rm -f usr/lib/libss.so.*
+
+# Nobody links to the C++ FLAC interface
+rm -f usr/lib/libFLAC++.so.*
+
+# Nobody uses the Stable ABI interface for python
+rm -f usr/lib/libpython3.so
+
+# Nobody uses libpsx (psx_syscall.h) provided by libcap
+rm -f usr/lib/libpsx.so.*
+
+# I do not expect you to be managing the public keys for a whole network of computers
+# from i586con, so ssh-keyscan is not needed :P
+rm -f usr/bin/ssh-keyscan
+
+# ALSA libatopology is not used by any of the tools we include
+rm -rf usr/lib/libatopology.so*
+
+# libflashrom is not used by anything (even flashrom...)
+rm -f usr/lib/libflashrom.so*
+
 cd "$1/usr/share"
+
 # In case hwdata installs pci.ids, there can be a duplicate pci.ids.gz from pciutils
 # the hwdata non-gzipped one compresses better in squashfs so remove the gz and add
 # a link for pciutils to understand where the hwdata one is.
@@ -95,7 +125,8 @@ rm -rf share || true
 # this grub config is useless and confusing, get rid of it
 rm -fr boot/grub
 # Move memtest86+ to the images dir; we want it on the ISO, not in the filesystem
-mv boot/memtest* $BINARIES_DIR/ || true
+#mv boot/memtest* $BINARIES_DIR/ || true
+
 # no info pages here
 rm -fr share/info
 # gnu tar is also prefix-confused and installs rmt (which we dont need) under /libexec

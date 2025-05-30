@@ -54,7 +54,7 @@ cp $BR2_EXTERNAL_I586CON_PATH/board/isolinux.cfg isofs.tmp/isolinux/isolinux.cfg
 dd if=/dev/zero of=isofs.tmp/boot/grubflop.bin bs=1k count=1440
 $HOST_DIR/bin/python3 $BR2_EXTERNAL_I586CON_PATH/board/rootfs-overlay/root/make-grub-floppy.py isofs.tmp/boot/grubflop.bin $HOST_DIR/bin ../target/usr/lib/grub/i386-pc
 
-cp memtest86+.bin isofs.tmp/boot/mt86p.bin
+cp memtest.bin isofs.tmp/boot/mt86p.bin
 
 if [ -d "$BR2_EXTERNAL_I586CON_PATH/../mp3" ]; then
 	cp -a "$BR2_EXTERNAL_I586CON_PATH/../mp3" isofs.tmp/
