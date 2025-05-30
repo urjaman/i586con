@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-BOOTBB_VERSION = 1.33.1
+BOOTBB_VERSION = 1.37.0
 BOOTBB_SITE = https://www.busybox.net/downloads
 BOOTBB_SOURCE = busybox-$(BOOTBB_VERSION).tar.bz2
 BOOTBB_LICENSE = GPL-2.0, bzip2-1.0.4
