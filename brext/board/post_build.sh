@@ -56,6 +56,8 @@ rm -rf usr/lib/python*/{ensurepip,distutils,unittest,turtle*}
 rm -f usr/bin/smtpd.py.*
 # these modules are deprecated and not needed for us
 rm -rf usr/lib/python*/{aifc,chunk,nntplib,pipes,sunau,xdrlib}.py*
+# these modules arent needed by us
+rm -rf usr/lib/python*/{doctest,mailbox,poplib}.py*
 # the python config-*/ dir seems to be unnecessary on a target without C compiler, i think?
 rm -rf usr/lib/python*/config-3.*
 
@@ -79,6 +81,7 @@ rm -f lib/lib{gobject,gthread,gmodule}-*
 # which does not need libevent... thus get rid of libevent. This also needs care
 # so that we dont accidentally build something against libevent ........ sigh.
 rm -f lib/libevent*
+rm -f usr/bin/event_rpcgen.py
 # glib needs pcre2, but we dont need their test program(s) (?)
 rm -f usr/bin/pcre2*
 # The PCRE2 POSIX API is unused
@@ -96,15 +99,30 @@ rm -f usr/lib/libpython3.so
 # Nobody uses libpsx (psx_syscall.h) provided by libcap
 rm -f usr/lib/libpsx.so.*
 
-# I do not expect you to be managing the public keys for a whole network of computers
-# from i586con, so ssh-keyscan is not needed :P
-rm -f usr/bin/ssh-keyscan
+# Sorry, no fancy key stuff with ssh for you
+rm -f usr/bin/ssh-{add,agent,keyscan}
 
 # ALSA libatopology is not used by any of the tools we include
 rm -rf usr/lib/libatopology.so*
 
+# aserver is not necessary (?)
+rm -f usr/bin/aserver
+
 # libflashrom is not used by anything (even flashrom...)
 rm -f usr/lib/libflashrom.so*
+
+# more utils than we needed
+rm -f usr/bin/{choom,colcrt,compile_et,devdump,enosys,fincore,mapscrn,metaflac,pcilmr,usbhid-dump}
+
+# more utils than we needed, sbin version
+rm -f usr/sbin/{blkpr,blkzone,chcpu,fsfreeze,netscsid}
+
+# udev has more *_id than we need
+cd "$1/usr/lib/udev"
+rm -f dmi_memory_id rules.d/70-memory.rules
+rm -f fido_id rules.d/60-fido-id.rules
+rm -f mtd_probe rules.d/75-probe_mtd.rules
+rm -f v4l_id rules.d/60-persistent-v4l.rules
 
 cd "$1/usr/share"
 
