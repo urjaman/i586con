@@ -1,0 +1,39 @@
+#!source-me/sh
+inotifyd /notifycb /dev:n &
+NOTIFYPID=$!
+/mounter $1 5 2.5s
+kill $NOTIFYPID
+while [ ! -e $2 ]; do
+	echo "Couldn't find media - blkid output follows:"
+	blkid
+	echo "Couldn't find media. Mount it if you can."
+	echo "Like this: "
+	echo " # mount /dev/<device> $1"
+	echo " # exit"
+	. /emergency-sh
+	echo "Checking for existence of $2..."
+done
+echo "Media found and mounted."
+echo "Unpacking save.tgz..."
+tar xf cd/img/save.tgz
+rootimg="/mng/cd/img/rootfs.img"
+while [ ! -e $rootimg ]; then
+	while read device mpoint fstype moar; do
+		if [ "$mpoint" = "/mnt/cd" ]; then
+			if [ "$fstype" = "iso9660" ]; then
+				echo "rootfs.img not found; trying session=0."
+				umount $mpoint
+				if [ -z "$mediafsflags" ]; then
+					mediafsflags="ro"
+				fi
+				mount -t $fstype -o $mediafsflags,session=0 $device $mpoint
+			fi
+			break
+		fi
+	done < /proc/mounts
+	if [ ! -e $rootimg ]; then
+		echo "rootfs.img not found on the media. Emergency shell."
+		. /emergency-sh
+	fi
+done
+

@@ -18,3 +18,4 @@ if [ $CONTROLLERS -gt 0 ]; then
 	. ./load-$CONTROLLERS
 	. ./load-common
 fi
+touch /.usb-loaded

@@ -1,14 +1,12 @@
 #!/busybox sh
 . /startup
 . /tmpfsmnt "-o size=75%"
-. /mountroot /mnt/cd /mnt/cd/img
-echo "Unpacking save.tgz..."
-tar xf cd/img/save.tgz
+. /mountxsave /mnt/cd /mnt/cd/img/save.tgz
 echo "Copying read-only image to RAM..."
 mkdir -p .o/Z
 [ -e /dev/zram0 ] && mount -t ramfs ramfs .o/Z
 cp cd/img/rootfs.img .o/Z/ro.cpio
-truncate -s $(cat cd/img/ro-size) .o/Z/ro.cpio
+[ -e cd/img/ro-size ] && truncate -s $(cat cd/img/ro-size) .o/Z/ro.cpio
 . /overlay "Z/ro.cpio"
 cd /mnt
 [ -x preinit.sh ] && ./preinit.sh

@@ -1,0 +1,4 @@
+#!source-me/sh
+# For keyboard support in the emergency shell
+[ ! -e /.usb-loaded ] && /usbload
+sh

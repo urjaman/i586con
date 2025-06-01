@@ -3,5 +3,9 @@ cd /
 umount sys
 umount proc
 mount --move /dev /mnt/dev
+while [ ! -e /mnt/sbin/init ]; do
+	echo "Missing /mnt/sbin/init ! - dropping to an investigation shell"
+	. /emergency-sh
+done
 echo "Switching to main /sbin/init"
 exec /busybox switch_root -c dev/console /mnt /sbin/init "$@"
