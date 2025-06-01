@@ -6,10 +6,10 @@ kill $NOTIFYPID
 while [ ! -e $2 ]; do
 	echo "Couldn't find media - blkid output follows:"
 	blkid
-	echo "Couldn't find media. Mount it if you can."
-	echo "Like this: "
+	echo "Couldn't find media. Mount it if you can, like this:"
 	echo " # mount /dev/<device> $1"
 	echo " # exit"
+	echo "If you cant, reboot -f and pick BIOS to RAM."
 	. /emergency-sh
 	echo "Checking for existence of $2..."
 done
