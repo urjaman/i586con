@@ -1,0 +1,50 @@
+diff --git a/Makefile b/Makefile
+index fb387c5..3d042b2 100644
+--- a/Makefile
++++ b/Makefile
+@@ -185,14 +185,12 @@ NETINSTALLABLE = efi/syslinux.efi $(INSTALLABLE_MODULES)
+ 
+ else
+ 
+-BSUBDIRS = codepage com32 lzo core memdisk mbr gpxe sample \
+-	   diag libinstaller dos win32 win64 dosutil txt
++BSUBDIRS = mbr
+ 
+ ITARGET  =
+ IOBJECTS = $(ITARGET) \
+-	utils/gethostip utils/isohybrid utils/mkdiskimage \
+-	mtools/syslinux linux/syslinux extlinux/extlinux
+-ISUBDIRS = libinstaller mtools linux extlinux utils
++	utils/isohybrid
++ISUBDIRS = utils
+ 
+ # Things to install in /usr/bin
+ INSTALL_BIN   =	mtools/syslinux
+@@ -208,7 +206,7 @@ INSTALL_DIAG  =	diag/mbr/handoff.bin \
+ 		diag/geodsp/geodsp1s.img.xz diag/geodsp/geodspms.img.xz
+ 
+ # These directories manage their own installables
+-INSTALLSUBDIRS = com32 utils dosutil
++INSTALLSUBDIRS = utils
+ 
+ # Things to install in /boot/extlinux
+ EXTBOOTINSTALL = $(INSTALLABLE_MODULES)
+diff --git a/utils/Makefile b/utils/Makefile
+index ac91aaa..d8f2a10 100644
+--- a/utils/Makefile
++++ b/utils/Makefile
+@@ -20,11 +20,9 @@ include $(MAKEDIR)/syslinux.mk
+ CFLAGS   = $(CFLAGS_FOR_BUILD) $(GCCWARN) -Os -fomit-frame-pointer -D_FILE_OFFSET_BITS=64 -I$(SRC)
+ LDFLAGS  = $(LDFLAGS_FOR_BUILD) -O2
+ 
+-C_TARGETS	 = isohybrid gethostip memdiskfind
+-SCRIPT_TARGETS	 = mkdiskimage
+-SCRIPT_TARGETS	+= isohybrid.pl  # about to be obsoleted
+-ASIS		 = $(addprefix $(SRC)/,keytab-lilo lss16toppm md5pass \
+-		   ppmtolss16 sha1pass syslinux2ansi pxelinux-options)
++C_TARGETS	 = isohybrid
++SCRIPT_TARGETS	 =
++ASIS		 =
+ 
+ TARGETS = $(C_TARGETS) $(SCRIPT_TARGETS)
+ 

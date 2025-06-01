@@ -1,0 +1,8 @@
+config BR2_PACKAGE_ISOHYBRID
+	bool "isohybrid from syslinux"
+	depends on BR2_i386 || BR2_x86_64
+	help
+	  Just the isohybrid tool from syslinux, for the target
+
+	  http://syslinux.org
+
