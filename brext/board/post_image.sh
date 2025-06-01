@@ -17,8 +17,6 @@ cp $BR2_EXTERNAL_I586CON_PATH/board/initramfs/init-ram mini-initramfs/init
 $HOST_DIR/bin/fakeroot $BR2_EXTERNAL_I586CON_PATH/board/make-initramfs.sh "$(realpath mini-initramfs)" "$(realpath isofs.tmp/rdparts/ram.img)"
 cp $BR2_EXTERNAL_I586CON_PATH/board/initramfs/init-cd mini-initramfs/init
 $HOST_DIR/bin/fakeroot $BR2_EXTERNAL_I586CON_PATH/board/make-initramfs.sh "$(realpath mini-initramfs)" "$(realpath isofs.tmp/rdparts/cd.img)"
-cp $BR2_EXTERNAL_I586CON_PATH/board/initramfs/init-hd mini-initramfs/init
-$HOST_DIR/bin/fakeroot $BR2_EXTERNAL_I586CON_PATH/board/make-initramfs.sh "$(realpath mini-initramfs)" "$(realpath isofs.tmp/rdparts/hd.img)"
 
 mkdir -p fsmod
 $BR2_EXTERNAL_I586CON_PATH/util/moddir.py ../target/lib/modules/*.* fsmod isofs
@@ -43,7 +41,6 @@ $HOST_DIR/bin/genisoimage -V I586CON -J -r -o i586con-upgrade.img isofs.tmp
 
 cat isofs.tmp/rdparts/{ram.img,isofs.cpio.gz} > isofs.tmp/boot/ram.img
 cat isofs.tmp/rdparts/{cd.img,isofs.cpio.gz} > isofs.tmp/boot/cd.img
-cat isofs.tmp/rdparts/{hd.img,isofs.cpio.gz} > isofs.tmp/boot/hd.img
 
 mkdir -p isofs.tmp/isolinux
 cp syslinux/* isofs.tmp/isolinux/

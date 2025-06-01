@@ -1,9 +1,0 @@
-#!/busybox sh
-. /startup
-mkdir rt
-. /mountroot /rt /rt/root
-mount -o bind /rt/root /mnt
-mount -o move /rt /mnt/boot
-cd /mnt
-. /overlay "../boot/img/rootfs.img"
-. /switch
