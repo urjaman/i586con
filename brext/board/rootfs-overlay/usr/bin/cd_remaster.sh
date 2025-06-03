@@ -10,9 +10,9 @@ fi
 set -e
 TDIR="${3:-/tmp/cd_remaster}"
 TDIR=$(realpath "$TDIR")
-NEWISO=$(realpath "$2")
+NEWISO=$(realpath `dirname "$2"`)/$(basename "$2")
 mkdir -p $TDIR/{rw,wk,isofs.tmp}
-mount -t overlay overlay -o index=off,metacopy=off,lowerdir=$1,upperdir=$TDIR/rw $TDIR/isofs.tmp
+mount -t overlay overlay -o index=off,metacopy=off,lowerdir=$1,upperdir=$TDIR/rw,workdir=$TDIR/wk $TDIR/isofs.tmp
 cd $TDIR/isofs.tmp
 echo "Now, add/modify files as desired in this directory ($(pwd)). Exit when ready to create $NEWISO."
 set +e

@@ -16,7 +16,7 @@ done
 echo "Media found and mounted."
 echo "Unpacking save.tgz..."
 tar xf cd/img/save.tgz
-rootimg="/mng/cd/img/rootfs.img"
+rootimg="/mnt/cd/img/rootfs.img"
 while [ ! -e $rootimg ]; do
 	while read device mpoint fstype moar; do
 		if [ "$mpoint" = "/mnt/cd" ]; then
