@@ -53,10 +53,14 @@ if __name__ == "__main__":
     layers = [mpb + "rw", "/"]
     hds.overlay_mount(layers, mpb + "wk", mpb + "savemp")
 
+    # TODO: this copies some of the logic from hds.hd_save. Unify.
+
     # none of the save methods wants these in the root of the save image
     os.chdir(mpb + "savemp")
     # dont save the whole effing RO :P
     hds.unlink(".o/Z/ro.cpio")
+    # Do not try to archive the overlayfs workdirs
+    sub("rm -rf .o/*-wk", shell=True)
     # make the "CD directory" and create a save.tgz there
     os.makedirs(mpb + "cd/img", exist_ok=True)
     hds.pack_savetgz(mpb + "cd/img")
@@ -95,6 +99,8 @@ if __name__ == "__main__":
         sys.exit(0)
 
     if not sub(burncmd):
+        os.chdir("/")
+        hds.umount_recorded()
         sys.exit("Burn failed :/")
 
     os.chdir("/")
