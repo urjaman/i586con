@@ -1,0 +1,25 @@
+17ÿ
+  1fVESA graphics modes17
+
+  If 1024x768-16 does not suit you, and your graphics card supports VBE 2.0,
+  you can edit or add the 1fvga=17-parameter via 1b[Tab]17.
+  
+ Ú 1acolors17 Â 1e640x48017 Â 1e800x60017 Â 1e1024x76817 Â 1e1280x102417 ¿
+ ³  256   ³  0x301  ³  0x303  ³   0x305  ³   0x307   ³
+ ³  32k   ³  0x310  ³  0x313  ³   0x316  ³   0x319   ³
+ ³  64k   ³  0x311  ³  0x314  ³   0x317  ³   0x31A   ³
+ ³  16M   ³  0x312  ³  0x315  ³   0x318  ³   0x31B   ³
+ ÀÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÙ
+  You can choose the "List of VESA Graphics Modes" for the modes supported
+  by your display adapter. Please note that linux kernel parameter
+  modes are 1eVESA mode number17 + 1e0x20017 (so 0x114 becomes 0x314).
+  There is also vga=ask for the kernel to prompt for a mode.
+  The modes supported by the kernel also include things like a 80x50 text mode
+  (8x8 font, not VESA) (vga=0xf01).
+
+
+  1b[F1]17 Boot modes (first help)
+  1b[F3]17 GRUB2 (and the other boot options)
+  1b[F4]17 What have I even booted?
+
+Press 1b[ESC]17 to return to the boot menu.

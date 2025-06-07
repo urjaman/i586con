@@ -1,0 +1,25 @@
+17ÿ
+  1fOther boot options17
+
+   1eGRUB217
+    Loads a memdisk-based small GRUB 2. It can load hard-disk based installs
+    of i586con (and the CD), and also use native GRUB2 drivers for disk access.
+    By using the GRUB commandline it is also possible to chainload DOS/NTFS
+    partitions, etc.
+
+    This image (boot/grubflop.bin) can also be written to a floppy, for
+    booting systems that can't boot from CD.
+
+   1eMemtest86+17
+    An utility to test your RAM (if you're having unexplained issues).
+
+   1ePoweroff17
+    Tries to power off the system (ATX and an APM bios required).    
+
+
+
+  1b[F1]17 Boot modes (first help)
+  1b[F2]17 Info about VESA graphics modes
+  1b[F4]17 What have I even booted?
+
+Press 1b[ESC]17 to return to the boot menu.

@@ -1,0 +1,25 @@
+17ÿ
+  1b[F7] 1fSecret extra help ;)17
+
+  Okay, i'll tell you more secret features. Experimentally, i586con
+  can burn a new save.tgz on a multisession CD-R (1ecd_save17).
+  You can boot with the original save.tgz with 1fmediafsflags=ro,session=017
+
+  You can alter the console palette with 1esetcolors17. See example
+  files at 1f/usr/share/linux-vt-setcolors-example-colors17.
+  A bare "1esetcolors17" reverts to defaults.
+
+  The default root shell is busybox 1ehush17 (for minimum RAM usage in trouble),
+  but the 1auser17 shell is 1ebash17, and I'd recommend an 1eexec bash17 as root, too.
+  
+  I can't list everything here, just go and explore - read through the
+  tab-completion for an empty command if bored, but here's some
+  notables: 1eddrescue17, 1eflashrom17, 1epicocom17, 1ersync17, 1esshfs17, cdrkit tools
+  (1ewodim17, 1egenisoimage17, 1eicedax17), 1emtools17, 1ehdparm17, and most of 1dPython 317.
+
+  1b[F1]17 Boot modes (first help)
+  1b[F2]17 Info about VESA graphics modes
+  1b[F3]17 GRUB2 (and the other boot options)
+  1b[F4]17 What have I even booted?
+
+Press 1b[ESC]17 to return to the boot menu.

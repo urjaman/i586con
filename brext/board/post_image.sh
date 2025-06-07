@@ -46,6 +46,9 @@ mkdir -p isofs.tmp/isolinux
 cp syslinux/* isofs.tmp/isolinux/
 cp $HOST_DIR/share/syslinux/{ldlinux,libutil,menu,poweroff,chain,vesainfo}.c32 isofs.tmp/isolinux/
 cp $HOST_DIR/share/syslinux/memdisk isofs.tmp/isolinux/
+
+cp $BR2_EXTERNAL_I586CON_PATH/board/f*.txt isofs.tmp/isolinux/
+sed -i "s|%VERSION%|$(cat $TARGET_DIR/etc/i586con/version)|" isofs.tmp/isolinux/f1.txt
 cp $BR2_EXTERNAL_I586CON_PATH/board/isolinux.cfg isofs.tmp/isolinux/isolinux.cfg
 
 dd if=/dev/zero of=isofs.tmp/boot/grubflop.bin bs=1k count=1440

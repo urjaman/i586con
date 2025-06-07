@@ -1,0 +1,25 @@
+17ÿ
+  Heyhihello, this is 1fi586con17 1e%VERSION%17
+
+  The boot modes, in short:
+  
+   1fLinux To RAM17 - Use this by default
+    17Uses linux drivers (small initramfs) to load the rootfs.img (and save.tgz)
+    Requires 64MB of RAM. Boot media is not required after boot is complete.
+
+   1fRun from CD17 - Use this if low RAM
+    17Uses linux drivers to access the rootfs.img (and save.tgz).
+    Requires 16MB of RAM. Boot media is needed for the full duration of use.
+
+   1fBIOS to RAM17 - The backup option
+    17Uses isolinux (BIOS level access) to load rootfs.img directly as initramfs
+    Requires 64MB of RAM. Boot media is not required after boot is complete.
+    Works even if linux has no drivers for the boot media.
+    Might be slower than Linux to RAM.
+    Does not support state saving via multisession CD-Rs.
+
+  1b[F2]17 Info about VESA graphics modes
+  1b[F3]17 GRUB2 (and the other boot options)
+  1b[F4]17 What have I even booted?
+
+Press 1b[ESC]17 to return to the boot menu.

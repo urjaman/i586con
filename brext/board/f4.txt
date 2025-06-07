@@ -1,0 +1,25 @@
+17ÿ
+  1fWhat is 'i586con'?17
+
+  It's a badly named livecd for Pentium-class machines. i586 CONsole.
+  Primary use cases are data rescue and repartitioning duties.
+  It can run entirely from RAM, so you can access other CDs or entirely
+  repartition the hard drive even it was booted from the HD.
+
+  But the system is certainly capable of doing more than just that.
+  You can use it as a thin 1essh17 client, a music player (1emocp17),
+  a really poor web browser (try 1elinks -g17)...
+
+  You can install it on the HD (1ehdinstall17), but mind you this is just
+  a way to load the same livecd experience from the HD (even a FAT partition).
+  Rudimentary state saving (1ehd_save17) is available.
+
+  Find a source mirror at 1fhttps://github.com/urjaman/i586con17
+  Also, find me on mastodon: 1f@urja@treehouse.systems17
+
+
+  1b[F1]17 Boot modes (first help)
+  1b[F2]17 Info about VESA graphics modes
+  1b[F3]17 GRUB2 (and the other boot options)
+
+Press 1b[ESC]17 to return to the boot menu.
