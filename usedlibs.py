@@ -50,7 +50,7 @@ def readelf(fn, add_lib=False):
             libs[soname] = []
 
 
-os.chdir(sys.argv[1])
+os.chdir(sys.argv[1] + "/target")
 
 findlibcmd = ["find", "usr/lib", "-maxdepth", "1", "-type", "f"]
 c = subprocess.run(findlibcmd, stdout=PIPE)
