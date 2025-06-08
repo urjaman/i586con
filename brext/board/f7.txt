@@ -1,4 +1,4 @@
-17ÿ
+17
   1b[F7] 1fSecret extra help ;)17
 
   Okay, i'll tell you more secret features. Experimentally, i586con
@@ -22,4 +22,4 @@
   1b[F3]17 GRUB2 (and the other boot options)
   1b[F4]17 What have I even booted?
 
-Press 1b[ESC]17 to return to the boot menu.
+Press some other key to return to the boot menu.

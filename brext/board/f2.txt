@@ -1,4 +1,4 @@
-17ÿ
+17
   1fVESA graphics modes17
 
   If 1024x768-16 does not suit you, and your graphics card supports VBE 2.0,
@@ -22,4 +22,4 @@
   1b[F3]17 GRUB2 (and the other boot options)
   1b[F4]17 What have I even booted?
 
-Press 1b[ESC]17 to return to the boot menu.
+Press some other key to return to the boot menu.

@@ -1,4 +1,4 @@
-17ÿ
+17
   1fOther boot options17
 
    1eGRUB217
@@ -22,4 +22,4 @@
   1b[F2]17 Info about VESA graphics modes
   1b[F4]17 What have I even booted?
 
-Press 1b[ESC]17 to return to the boot menu.
+Press some other key to return to the boot menu.

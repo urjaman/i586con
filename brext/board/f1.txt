@@ -1,5 +1,5 @@
-17ÿ
-  Heyhihello, this is 1fi586con17 1e%VERSION%17
+17
+  Heyhihello, this is 1fi586con17 ver. 1e%VERSION%17
 
   The boot modes, in short:
   
@@ -22,4 +22,4 @@
   1b[F3]17 GRUB2 (and the other boot options)
   1b[F4]17 What have I even booted?
 
-Press 1b[ESC]17 to return to the boot menu.
+Press some other key to return to the boot menu.
