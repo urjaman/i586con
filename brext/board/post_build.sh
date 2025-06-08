@@ -69,6 +69,7 @@ rm -f usr/sbin/smartd
 rm -f etc/smartd_warning.sh
 rm -f etc/smartd.conf
 rm -rf etc/smartd_warning.d
+rm -rf usr/share/smartmontools
 # We wanted libglib. We got libgio. None of what we wanted actually uses it, or so it seems.
 # This is something to keep an eye on and test libglib-using stuff carefully (sshfs, mc)
 rm -f bin/{gapplication,gdbus,gio,gio-querymodules,gresource,gsettings,gi-compile-repository,gi-*-typelib}
@@ -103,6 +104,7 @@ rm -f usr/lib/libpsx.so.*
 # Sorry, no fancy key stuff with ssh for you
 rm -f usr/bin/ssh-{add,agent,keyscan}
 rm -f usr/libexec/ssh-pkcs11-helper
+rm -f usr/libexec/ssh-keysign
 
 # ALSA libatopology is not used by any of the tools we include
 rm -rf usr/lib/libatopology.so*
