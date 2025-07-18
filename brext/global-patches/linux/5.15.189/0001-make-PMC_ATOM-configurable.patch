@@ -1,0 +1,27 @@
+From 471dd4d872054203dabda0bf76f6125471dedf94 Mon Sep 17 00:00:00 2001
+From: Urja Rannikko <urjaman@gmail.com>
+Date: Sun, 14 Nov 2021 11:16:32 +0200
+Subject: [PATCH 1/5] make PMC_ATOM configurable
+
+This is for size reasons for building an old-x86 kernel.
+
+Signed-off-by: Urja Rannikko <urjaman@gmail.com>
+---
+ drivers/platform/x86/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/platform/x86/Kconfig b/drivers/platform/x86/Kconfig
+index c03367b13db6..29b2c8174c86 100644
+--- a/drivers/platform/x86/Kconfig
++++ b/drivers/platform/x86/Kconfig
+@@ -1013,6 +1013,6 @@ config INTEL_SCU_IPC_UTIL
+ endif # X86_PLATFORM_DEVICES
+ 
+ config PMC_ATOM
+-       def_bool y
++       bool "PMC ATOM"
+        depends on PCI
+        select COMMON_CLK
+-- 
+2.49.0
+
