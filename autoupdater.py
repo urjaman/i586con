@@ -119,7 +119,7 @@ def subtea(cmds, log, error_subj):
         teecmd = ["tee", "-a", log ]
 
 
-def latest_lts():
+def latest_lts_old():
     # Gotta love this for an "API"
     url = "https://buildroot.org/download.html"
     r = urllib.request.urlopen(url, timeout=30)
@@ -137,6 +137,25 @@ def latest_lts():
             if ebtag not in verstart:
                 sys.exit("ebtag not in verstart")
             version,_ = verstart.split(ebtag,maxsplit=1)
+            return version.decode()
+    sys.exit("Couldnt find what i was looking for in " + url)
+
+def latest_lts():
+    # Gotta love this for an "API"
+    url = "https://buildroot.org/download.html"
+    r = urllib.request.urlopen(url, timeout=30)
+    lines = r.readlines()
+    search1 = b'<th>Long-term support</th>'
+    search1_found = False
+    search2 = b'downloads/buildroot-'
+
+    for L in lines:
+        if search1 in L:
+            search1_found = True
+            continue
+        if search1_found and b'href=' in L and search2 in L and b".tar" in L:
+            _,verpart = L.split(search2,maxsplit=1)
+            version,_ = verpart.split(b".tar",maxsplit=1)
             return version.decode()
     sys.exit("Couldnt find what i was looking for in " + url)
 
